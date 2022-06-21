@@ -29,7 +29,6 @@
 #include <time/rtime.h>
 
 #include "atari.h"
-//#include "log.h"
 
 int rtime8_enabled = 1;
 

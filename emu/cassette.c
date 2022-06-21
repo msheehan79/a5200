@@ -29,7 +29,6 @@
 #include "atari.h"
 #include "cpu.h"
 #include "cassette.h"
-//#include "log.h"
 #include "memory.h"
 #include "sio.h"
 #include "util.h"

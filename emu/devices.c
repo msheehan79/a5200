@@ -62,7 +62,6 @@
 #include "binload.h"
 #include "cpu.h"
 #include "devices.h"
-//#include "log.h"
 #include "memory.h"
 #include "pia.h" /* atari_os */
 #include "sio.h"

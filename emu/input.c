@@ -31,7 +31,6 @@
 #include "cpu.h"
 #include "gtia.h"
 #include "input.h"
-//#include "log.h"
 #include "memory.h"
 #include "pia.h"
 #include "platform.h"
@@ -82,9 +81,6 @@ int mouse_joy_inertia = 10;
 static UBYTE STICK[4];
 static UBYTE TRIG_input[4] = {0};
 
-//static int max_scanline_counter;
-//static int scanline_counter;
-
 void INPUT_Initialise(void) {
 	int i;
 	for (i = 0; i < 4; i++)
@@ -99,11 +95,7 @@ void INPUT_Frame(void) {
 	int i;
 	static int last_key_code = AKEY_NONE;
 	static int last_key_break = 0;
-  static UBYTE last_stick[4] = {STICK_CENTRE, STICK_CENTRE, STICK_CENTRE, STICK_CENTRE};
-//ALEK static int last_mouse_buttons = 0;
-
-	//scanline_counter = 10000;	/* do nothing in INPUT_Scanline() */
-
+	static UBYTE last_stick[4] = {STICK_CENTRE, STICK_CENTRE, STICK_CENTRE, STICK_CENTRE};
 	/* handle keyboard */
 
 	/* In Atari 5200 joystick there's a second fire button, which acts
@@ -262,24 +254,3 @@ void INPUT_Frame(void) {
 	PORT_input[0] = (STICK[1] << 4) | STICK[0];
 	PORT_input[1] = (STICK[3] << 4) | STICK[2];
 }
-
-/*
-void INPUT_Scanline(void) {
-	if (--scanline_counter == 0) {
-		UBYTE stick = mouse_step();
-		if (mouse_mode == MOUSE_TRAK) {
-			// bit 3 toggles - vertical movement, bit 2 = 0 - up 
-			// bit 1 toggles - horizontal movement, bit 0 = 0 - left 
-			STICK[mouse_port] = ((mouse_y & 1) << 3) | ((stick & 1) << 2)
-								| ((mouse_x & 1) << 1) | ((stick & 4) >> 2);
-		}
-		else {
-			STICK[mouse_port] = (mouse_mode == MOUSE_AMIGA ? mouse_amiga_codes : mouse_st_codes)
-								[(mouse_y & 3) * 4 + (mouse_x & 3)];
-		}
-		PORT_input[0] = (STICK[1] << 4) | STICK[0];
-		PORT_input[1] = (STICK[3] << 4) | STICK[2];
-		scanline_counter = max_scanline_counter;
-	}
-}
-*/

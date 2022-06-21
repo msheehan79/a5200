@@ -7,7 +7,6 @@
 extern FILE *bin_file;
 
 int BIN_loader(const char *filename);
-void BIN_loader_cont(void);
 extern int start_binloading;
 extern int loading_basic;
 #define LOADING_BASIC_SAVED              1

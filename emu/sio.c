@@ -33,11 +33,9 @@
 #include "cassette.h"
 #include "compfile.h"
 #include "cpu.h"
-//#include "log.h"
 #include "memory.h"
 #include "platform.h"
 #include "pokeysnd.h"
-//#include "pokeysnd.h"
 #include "sio.h"
 #include "util.h"
 #ifndef BASIC

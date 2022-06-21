@@ -32,7 +32,6 @@
 
 #include "atari.h"
 #include "compfile.h"
-//#include "log.h"
 #include "util.h"
 
 /* GZ decompression ------------------------------------------------------ */

@@ -25,13 +25,10 @@
 #include "config.h"
 #include <stdio.h>
 
-//ALEK #include "main.h"
-
 #include "atari.h"
 #include "binload.h"
 #include "cpu.h"
 #include "devices.h"
-//#include "log.h"
 #include "memory.h"
 #include "sio.h"
 
@@ -57,7 +54,7 @@ static int BIN_read_word(void)
 }
 
 /* Start or continue loading */
-void BIN_loader_cont(void)
+static void BIN_loader_cont(void)
 {
 	if (bin_file == NULL)
 		return;
