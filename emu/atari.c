@@ -23,7 +23,7 @@
 */
 
 #include "config.h"
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_SIGNAL_H
@@ -183,7 +183,6 @@ void Atari800_RunEsc(UBYTE esc_code)
 	ui();
 #else /* CRASH_MENU */
 	cim_encountered = 1;
-	fprintf(stderr,"Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
 #ifndef __PLUS
 	if (!Atari800_Exit(TRUE))
 		exit(0);
@@ -435,31 +434,7 @@ UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
 UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
 
 int Atari800_Exit(int run_monitor) {
-	int restart;
-
-#ifdef STAT_UNALIGNED_WORDS
-	printf("(ptr&7) atari_screen  pm_scanline  _____ memory ______  memory (aligned addr)\n");
-	printf("          32-bit W      32-bit R   16-bit R   16-bit W   16-bit R   16-bit W\n");
-	{
-		unsigned int sums[6] = {0, 0, 0, 0, 0, 0};
-		int i;
-		for (i = 0; i < 8; i++) {
-			printf("%6d%12u%14u%11u%11u%11u%11u\n", i,
-				atari_screen_write_long_stat[i], pm_scanline_read_long_stat[i],
-				memory_read_word_stat[i], memory_write_word_stat[i],
-				memory_read_aligned_word_stat[i], memory_write_aligned_word_stat[i]);
-			sums[0] += atari_screen_write_long_stat[i];
-			sums[1] += pm_scanline_read_long_stat[i];
-			sums[2] += memory_read_word_stat[i];
-			sums[3] += memory_write_word_stat[i];
-			sums[4] += memory_read_aligned_word_stat[i];
-			sums[5] += memory_write_aligned_word_stat[i];
-		}
-		printf("total:%12u%14u%11u%11u%11u%11u\n",
-			sums[0], sums[1], sums[2], sums[3], sums[4], sums[5]);
-	}
-#endif /* STAT_UNALIGNED_WORDS */
-	restart = Atari_Exit(run_monitor);
+	int restart = Atari_Exit(run_monitor);
 #ifndef __PLUS
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
@@ -575,14 +550,10 @@ void Atari800_Frame(unsigned int refresh_rate) {
 	INPUT_Frame();
 #endif
 	GTIA_Frame();
-#ifdef SOUND
-//ALEK	Sound_Update();
-#endif
 
 	if (++refresh_counter >= refresh_rate) {
 		refresh_counter = 0;
 		ANTIC_Frame(TRUE);
-		//INPUT_DrawMousePointer();
 	}
 	else {
 		ANTIC_Frame(FALSE);
@@ -725,17 +696,12 @@ void MainStateRead(void) {
 	default:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
-		fprintf(stderr,"Warning: Bad machine type read in from state save, defaulting to 800 XL");
 		break;
 	}
 
 	ReadINT(&pil_on, 1);
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
-
-//	load_roms();
-	/* XXX: what about patches? */
 }
 
 #endif
-

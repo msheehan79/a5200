@@ -299,6 +299,5 @@ void INPUT_Frame(void);
 void INPUT_Scanline(void);
 void INPUT_SelectMultiJoy(int no);
 void INPUT_CenterMousePointer(void);
-void INPUT_DrawMousePointer(void);
 
 #endif /* __A5200_INPUT_H_ */

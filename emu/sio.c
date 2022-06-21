@@ -398,7 +398,6 @@ static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 	SIO_Dismount(unit + 1);
 	f = fopen(fname, "wb");
 	if (f == NULL) {
-		fprintf(stderr,"FormatDisk: failed to open %s for writing", fname);
 		return 'E';
 	}
 	/* Write ATR header if necessary */
@@ -760,9 +759,6 @@ static UBYTE Command_Frame(void)
 
 	if (unit < 0 || unit >= MAX_DRIVES) {
 		/* Unknown device */
-		fprintf(stderr,"Unknown command frame: %02x %02x %02x %02x %02x",
-			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
-			   CommandFrame[3], CommandFrame[4]);
 		TransferStatus = SIO_NoFrame;
 		return 0;
 	}
@@ -860,8 +856,6 @@ void SIO_TapeMotor(int onoff)
 void SwitchCommandFrame(int onoff)
 {
 	if (onoff) {				/* Enabled */
-		if (TransferStatus != SIO_NoFrame)
-			fprintf(stderr,"Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
 		DataIndex = 0;
 		ExpectedBytes = 5;
@@ -870,8 +864,6 @@ void SwitchCommandFrame(int onoff)
 	else {
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
-			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
-				fprintf(stderr,"Command frame %02x unfinished.", TransferStatus);
 			TransferStatus = SIO_NoFrame;
 		}
 		CommandIndex = 0;
@@ -917,7 +909,6 @@ void SIO_PutByte(int byte)
 			}
 		}
 		else {
-			fprintf(stderr,"Invalid command frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -947,9 +938,6 @@ void SIO_PutByte(int byte)
 					TransferStatus = SIO_FinalStatus;
 				}
 			}
-		}
-		else {
-			fprintf(stderr,"Invalid data frame!");
 		}
 		break;
 	}
@@ -982,7 +970,6 @@ int SIO_GetByte(void)
 			}
 		}
 		else {
-			fprintf(stderr,"Invalid read frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -1000,7 +987,6 @@ int SIO_GetByte(void)
 			}
 		}
 		else {
-			fprintf(stderr,"Invalid read frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;

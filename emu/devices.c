@@ -1263,7 +1263,6 @@ static int Device_H_BinReadWord(void)
 		binf = NULL;
 		if (start_binloading) {
 			start_binloading = FALSE;
-			fprintf(stderr,"binload: not valid BIN file");
 			regY = 180; /* MyDOS: not a binary file */
 			SetN;
 			return -1;
@@ -1432,7 +1431,6 @@ static void Device_H_Load(int mydos)
 	if (fread(buf, 1, 2, binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {
 		fclose(binf);
 		binf = NULL;
-		fprintf(stderr,"H: load: not valid BIN file");
 		regY = 180;
 		SetN;
 		return;

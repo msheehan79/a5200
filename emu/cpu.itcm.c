@@ -27,11 +27,6 @@
 	=====================
 
 	Define CPU65C02 if you don't want 6502 JMP() bug emulation.
-	Define CYCLES_PER_OPCODE to update xpos in each opcode's emulation.
-	Define MONITOR_BREAK if you want code breakpoints and execution history.
-	Define MONITOR_BREAKPOINTS if you want user-defined breakpoints.
-	Define MONITOR_PROFILE if you want 6502 opcode profiling.
-	Define MONITOR_TRACE if you want the code to be disassembled while it is executed.
 	Define NO_GOTO if you compile with GCC, but want switch() rather than goto *.
 	Define NO_V_FLAG_VARIABLE to don't use local (static) variable V for the V flag.
 	Define PC_PTR to emulate 6502 Program Counter using UBYTE *.
@@ -75,10 +70,6 @@
 //#ifndef __GNUC__
 //#define NO_GOTO
 //#endif
-
-/* #define CYCLES_PER_OPCODE */
-
-/* #define MONITOR_PROFILE */
 
 /* #define NO_V_FLAG_VARIABLE */
 
@@ -178,24 +169,10 @@ void CPU_PutStatus(void)
 /* For Atari Basic loader */
 void (*rts_handler)(void) = NULL;
 
-/* 6502 instruction profiling */
-#ifdef MONITOR_PROFILE
-int instruction_count[256];
-#endif
-
 UBYTE cim_encountered = FALSE;
 
 /* Execution history */
-#ifdef MONITOR_BREAK
-UWORD remember_PC[REMEMBER_PC_STEPS];
-unsigned int remember_PC_curpos = 0;
-int remember_xpos[REMEMBER_PC_STEPS];
-UWORD remember_JMP[REMEMBER_JMP_STEPS];
-unsigned int remember_jmp_curpos = 0;
-#define INC_RET_NESTING ret_nesting++
-#else /* MONITOR_BREAK */
 #define INC_RET_NESTING
-#endif /* MONITOR_BREAK */
 
 /* Addressing modes */
 #ifdef WRAP_ZPAGE
@@ -428,11 +405,7 @@ void GO(int limit)
 	};
 #endif	/* NO_GOTO */
 
-#ifdef CYCLES_PER_OPCODE
-#define OPCODE(code) OPCODE_ALIAS(code) xpos += cycles[0x##code];
-#else
 #define OPCODE(code) OPCODE_ALIAS(code)
-#endif
 
 #ifdef PC_PTR
 	const UBYTE *PC;
@@ -498,10 +471,6 @@ void GO(int limit)
 
 	while (xpos < xpos_limit) {
 
-#ifdef MONITOR_BREAKPOINTS
-	breakpoint_return:
-#endif
-
 #ifdef PC_PTR
 		/* must handle 64k wrapping */
 		if (PC >= memory + 0xfffe) {
@@ -519,207 +488,13 @@ void GO(int limit)
 		}
 #endif /* PC_PTR */
 
-#ifdef MONITOR_TRACE
-		if (trace_file != NULL) {
-			show_state(trace_file, GET_PC(), A, X, Y, S,
-				(N & 0x80) ? 'N' : '-',
-#ifndef NO_V_FLAG_VARIABLE
-				V ? 'V' : '-',
-#else
-				(regP & V_FLAG) ? 'V' : '-',
-#endif
-				(Z == 0) ? 'Z' : '-',
-				(C != 0) ? 'C' : '-');
-		}
-#endif
-
-#ifdef MONITOR_BREAK
-		remember_PC[remember_PC_curpos] = GET_PC();
-#ifdef NEW_CYCLE_EXACT
-		if (DRAWING_SCREEN)
-			remember_xpos[remember_PC_curpos] = cpu2antic_ptr[xpos] + (ypos << 8);
-		else
-#endif
-			remember_xpos[remember_PC_curpos] = xpos + (ypos << 8);
-		remember_PC_curpos = (remember_PC_curpos + 1) % REMEMBER_PC_STEPS;
-
-		if (break_addr == GET_PC() || break_ypos == ypos) {
-			DO_BREAK;
-		}
-#endif /* MONITOR_BREAK */
-
 #if defined(WRAP_64K) && !defined(PC_PTR)
 		memory[0x10000] = memory[0];
 #endif
 
 		insn = GET_CODE_BYTE();
 
-#ifdef MONITOR_BREAKPOINTS
-		if (breakpoint_table_size > 0 && breakpoints_enabled) {
-			UBYTE optype = optype6502[insn];
-			int i;
-			switch (optype >> 4) {
-			case 1:
-				addr = PEEK_CODE_WORD();
-				break;
-			case 2:
-				addr = PEEK_CODE_BYTE();
-				break;
-			case 3:
-				addr = PEEK_CODE_WORD() + X;
-				break;
-			case 4:
-				addr = PEEK_CODE_WORD() + Y;
-				break;
-			case 5:
-				addr = (UBYTE) (PEEK_CODE_BYTE() + X);
-				addr = zGetWord(addr);
-				break;
-			case 6:
-				addr = PEEK_CODE_BYTE();
-				addr = zGetWord(addr) + Y;
-				break;
-			case 7:
-				addr = (UBYTE) (PEEK_CODE_BYTE() + X);
-				break;
-			case 8:
-				addr = (UBYTE) (PEEK_CODE_BYTE() + Y);
-				break;
-			/* XXX: case 13 */
-			default:
-				addr = 0;
-				break;
-			}
-			for (i = 0; i < breakpoint_table_size; i++) {
-				int cond;
-				int value;
-				if (!breakpoint_table[i].enabled)
-					continue; /* skip */
-				cond = breakpoint_table[i].condition;
-				if (cond == BREAKPOINT_OR)
-					break; /* fire */
-				value = breakpoint_table[i].value;
-				if (cond == BREAKPOINT_FLAG_CLEAR) {
-					switch (value) {
-					case N_FLAG:
-						if ((N & 0x80) == 0)
-							continue;
-						break;
-#ifndef NO_V_FLAG_VARIABLE
-					case V_FLAG:
-						if (V == 0)
-							continue;
-						break;
-#endif
-					case Z_FLAG:
-						if (Z != 0)
-							continue;
-						break;
-					case C_FLAG:
-						if (C == 0)
-							continue;
-						break;
-					default:
-						if ((regP & value) == 0)
-							continue;
-						break;
-					}
-				}
-				else if (cond == BREAKPOINT_FLAG_SET) {
-					switch (value) {
-					case N_FLAG:
-						if ((N & 0x80) != 0)
-							continue;
-						break;
-#ifndef NO_V_FLAG_VARIABLE
-					case V_FLAG:
-						if (V != 0)
-							continue;
-						break;
-#endif
-					case Z_FLAG:
-						if (Z == 0)
-							continue;
-						break;
-					case C_FLAG:
-						if (C != 0)
-							continue;
-						break;
-					default:
-						if ((regP & value) != 0)
-							continue;
-						break;
-					}
-				}
-				else {
-					int val;
-					switch (cond >> 3) {
-					case BREAKPOINT_PC >> 3:
-						val = GET_PC() - 1;
-						break;
-					case BREAKPOINT_A >> 3:
-						val = A;
-						break;
-					case BREAKPOINT_X >> 3:
-						val = X;
-						break;
-					case BREAKPOINT_Y >> 3:
-						val = Y;
-						break;
-					case BREAKPOINT_S >> 3:
-						val = S;
-						break;
-					case BREAKPOINT_READ >> 3:
-						if ((optype & 4) == 0)
-							goto cond_failed;
-						val = addr;
-						break;
-					case BREAKPOINT_WRITE >> 3:
-						if ((optype & 8) == 0)
-							goto cond_failed;
-						val = addr;
-						break;
-					case BREAKPOINT_ACCESS >> 3:
-						if ((optype & 12) == 0)
-							goto cond_failed;
-						val = addr;
-						break;
-					default:
-						/* shouldn't happen */
-						continue;
-					}
-					if ((cond & BREAKPOINT_LESS) != 0 && val < value)
-						continue;
-					if ((cond & BREAKPOINT_EQUAL) != 0 && val == value)
-						continue;
-					if ((cond & BREAKPOINT_GREATER) != 0 && val > value)
-						continue;
-				cond_failed:
-					;
-				}
-				/* a condition failed */
-				/* quickly skip AND-connected conditions */
-				do {
-					if (++i >= breakpoint_table_size)
-						goto no_breakpoint;
-				} while (breakpoint_table[i].condition != BREAKPOINT_OR || !breakpoint_table[i].enabled);
-			}
-			/* fire breakpoint */
-			PC--;
-			DO_BREAK;
-			goto breakpoint_return;
-		no_breakpoint:
-			;
-		}
-#endif /* MONITOR_BREAKPOINTS */
-
-#ifndef CYCLES_PER_OPCODE
 		xpos += cycles[insn];
-#endif
-
-#ifdef MONITOR_PROFILE
-		instruction_count[insn]++;
-#endif
 
 #ifdef PREFETCH_CODE
 		addr = PEEK_CODE_WORD();
@@ -732,12 +507,6 @@ void GO(int limit)
 #endif
 
 	OPCODE(00)				/* BRK */
-#ifdef MONITOR_BREAK
-		if (break_brk) {
-			DO_BREAK;
-		}
-		else
-#endif
 		{
 			PC++;
 			PHPC;
@@ -927,11 +696,6 @@ void GO(int limit)
 	OPCODE(20)				/* JSR abcd */
 		{
 			UWORD retaddr = GET_PC() + 1;
-#ifdef MONITOR_BREAK
-			remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
-			remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
-			ret_nesting++;
-#endif
 			PHW(retaddr);
 		}
 		SET_PC(OP_WORD);
@@ -1110,10 +874,6 @@ void GO(int limit)
 		data = PL;
 		SET_PC((PL << 8) + data);
 		CPUCHECKIRQ;
-#ifdef MONITOR_BREAK
-		if (break_ret && --ret_nesting <= 0)
-			break_step = TRUE;
-#endif
 		DONE
 
 	OPCODE(41)				/* EOR (ab,x) */
@@ -1177,10 +937,6 @@ void GO(int limit)
 		DONE
 
 	OPCODE(4c)				/* JMP abcd */
-#ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
-		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
-#endif
 		SET_PC(OP_WORD);
 		DONE
 
@@ -1274,10 +1030,6 @@ void GO(int limit)
 	OPCODE(60)				/* RTS */
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
-#ifdef MONITOR_BREAK
-		if (break_ret && --ret_nesting <= 0)
-			break_step = TRUE;
-#endif
 		if (rts_handler != NULL) {
 			rts_handler();
 			rts_handler = NULL;
@@ -1382,10 +1134,6 @@ void GO(int limit)
 		DONE
 
 	OPCODE(6c)				/* JMP (abcd) */
-#ifdef MONITOR_BREAK
-		remember_JMP[remember_jmp_curpos] = GET_PC() - 1;
-		remember_jmp_curpos = (remember_jmp_curpos + 1) % REMEMBER_JMP_STEPS;
-#endif
 		ABSOLUTE;
 #ifdef CPU65C02
 		/* XXX: if ((UBYTE) addr == 0xff) xpos++; */
@@ -2101,10 +1849,6 @@ void GO(int limit)
 		UPDATE_LOCAL_REGS;
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
-#ifdef MONITOR_BREAK
-		if (break_ret && --ret_nesting <= 0)
-			break_step = TRUE;
-#endif
 		DONE
 
 	OPCODE(f2)				/* ESC #ab (CIM) - on Atari is here instruction CIM [unofficial] !RS! */
@@ -2242,15 +1986,6 @@ void GO(int limit)
 #else
 	next:
 #endif
-
-#ifdef MONITOR_BREAK
-		if (break_step) {
-			DO_BREAK;
-		}
-#endif
-		/* This "continue" does nothing here.
-		   But it is necessary because, if we're not using NO_GOTO nor MONITOR_BREAK,
-		   gcc can complain: "error: label at end of compound statement". */
 		continue;
 	}
 
@@ -2263,10 +1998,6 @@ void CPU_Initialise(void)
 
 void CPU_Reset(void)
 {
-#ifdef MONITOR_PROFILE
-	memset(instruction_count, 0, sizeof(instruction_count));
-#endif
-
 	IRQ = 0;
 
 	regP = 0x34;				/* The unused bit is always 1, I flag set! */
