@@ -108,25 +108,13 @@
 
 #include "global.h"
 
-//JGDATARI_t ATARI;
-
 int machine_type = MACHINE_5200;
-//int ram_size = 64;
 int ram_size = 16;
 int tv_mode = TV_NTSC;
 int disable_basic = TRUE;
 int enable_sio_patch = TRUE;
 
-int verbose = FALSE;
-
-//int refresh_rate = 1;
 int sprite_collisions_in_skipped_frames = FALSE;
-
-int percent_atari_speed = 100;
-#ifdef BENCHMARK
-static double benchmark_start_time;
-static double Atari_time(void);
-#endif
 
 //int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 

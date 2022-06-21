@@ -92,8 +92,6 @@ int prior_pos_buf[PRIOR_BUF_SIZE];
 #define WRITE_VIDEO_BYTE(ptr, val) (*(ptr) = val)
 #define FILL_VIDEO(ptr, val, size) memset(ptr, val, size)
 
-void entire_screen_dirty(void) {}
-
 #define READ_VIDEO_LONG(ptr) (*(ptr))
 
 void video_memset(UBYTE *ptr, UBYTE val, ULONG size) {

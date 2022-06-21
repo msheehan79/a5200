@@ -15,14 +15,11 @@
 #include <unistd.h>
 #include <string.h>
 
-//ALEK #include "main.h"
-
 #include "config.h"
 #include "cpu.h"
 #include "input.h"
 #include "sound.h"
 #include "pcjoy.h"
-#include "rt-config.h"  /* for refresh_rate */
 #include "screen.h"
 
 unsigned int joy_5200_trig[4]  = {0};

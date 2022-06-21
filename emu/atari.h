@@ -10,10 +10,6 @@
 
 /* Fundamental declarations ---------------------------------------------- */
 
-//#define NODIRTYCOMPARE
-
-#define ATARI_TITLE  "Atari 800 Emulator, Version 2.0.2"
-
 #ifndef FALSE
 #define FALSE  0
 #endif
@@ -76,13 +72,6 @@ extern int enable_sio_patch;
    You should never display anything outside the middle 336 columns. */
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
-
-/* You can read it to see how fast is the emulator compared to real Atari
-   (100 if running at real Atari speed). */
-extern int percent_atari_speed;
-
-/* How often the screen is updated (1 = every Atari frame). */
-extern int refresh_rate;
 
 /* Set to TRUE for faster emulation with refresh_rate > 1.
    Set to FALSE for accurate emulation with refresh_rate > 1. */
