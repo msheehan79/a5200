@@ -69,7 +69,7 @@ void *Util_malloc(size_t size)
 {
 	void *ptr = malloc(size);
 	if (ptr == NULL) {
-		Atari800_Exit(FALSE);
+		Atari800_Exit();
 		exit(1);
 	}
   memset(ptr, 0, size);

@@ -171,7 +171,7 @@ int Atari800_LoadConfig(const char *alternate_config_filename);
 int Atari800_WriteConfig(void);
 
 /* Shuts down Atari800 emulation core. */
-int Atari800_Exit(int run_monitor);
+int Atari800_Exit(void);
 
 
 /* Private interface ----------------------------------------------------- */

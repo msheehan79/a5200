@@ -1249,7 +1249,7 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
 void retro_unload_game(void) 
 {
    CART_Remove();
-   Atari800_Exit(0);
+   Atari800_Exit();
 
    if (rom_buf)
       free(rom_buf);

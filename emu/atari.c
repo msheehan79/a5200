@@ -184,10 +184,10 @@ void Atari800_RunEsc(UBYTE esc_code)
 #else /* CRASH_MENU */
 	cim_encountered = 1;
 #ifndef __PLUS
-	if (!Atari800_Exit(TRUE))
+	if (!Atari800_Exit())
 		exit(0);
 #else /* __PLUS */
-	Atari800_Exit(TRUE);
+	Atari800_Exit();
 #endif /* __PLUS */
 #endif /* CRASH_MENU */
 }
@@ -433,7 +433,7 @@ UNALIGNED_STAT_DEF(memory_write_word_stat)
 UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
 UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
 
-int Atari800_Exit(int run_monitor) {
+int Atari800_Exit(void) {
 	int restart = 0;
 #ifndef __PLUS
 	if (!restart) {

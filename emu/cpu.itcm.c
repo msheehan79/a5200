@@ -276,9 +276,9 @@ void NMI(void)
 
 /* Enter monitor */
 #ifdef __PLUS
-#define ENTER_MONITOR  Atari800_Exit(TRUE)
+#define ENTER_MONITOR  Atari800_Exit()
 #else
-#define ENTER_MONITOR  if (!Atari800_Exit(TRUE)) exit(0)
+#define ENTER_MONITOR  if (!Atari800_Exit()) exit(0)
 #endif
 #define DO_BREAK \
 	UPDATE_GLOBAL_REGS; \
