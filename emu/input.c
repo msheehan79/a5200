@@ -49,8 +49,6 @@ int key_code = AKEY_NONE;
 int key_shift = 0;
 int key_consol = CONSOL_NONE;
 
-int joy_autofire[4] = {AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF, AUTOFIRE_OFF};
-
 int joy_multijoy = 0;
 
 unsigned int joy_5200_digital_min = JOY_5200_MIN;

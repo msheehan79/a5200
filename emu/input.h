@@ -240,13 +240,6 @@ extern int key_consol;	/* Start, Select and Option keys */
 #define	STICK_FORWARD	0x0e
 #define	STICK_UR		0x06
 
-/* joy_autofire values */
-#define AUTOFIRE_OFF	0
-#define AUTOFIRE_FIRE	1	/* Fire dependent */
-#define AUTOFIRE_CONT	2	/* Continuous */
-
-extern int joy_autofire[4];		/* autofire mode for each Atari port */
-
 extern int joy_multijoy;	/* emulate MultiJoy4 interface */
 
 /* 5200 joysticks values */
