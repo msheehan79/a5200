@@ -54,7 +54,7 @@ static uint8 Outbit[4 * MAXPOKEYS];		/* current state of the output (high or low
 
 static uint8 Outvol[4 * MAXPOKEYS];		/* last output volume for each channel */
 
-/* Initialze the bit patterns for the polynomials. */
+/* Initialize the bit patterns for the polynomials. */
 
 /* The 4bit and 5bit patterns are the identical ones used in the pokey chip. */
 /* Though the patterns could be packed with 8 bits per byte, using only a */
@@ -124,13 +124,6 @@ static void null_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain) {}
 void (*Update_pokey_sound) (uint16 addr, uint8 val, uint8 chip, uint8 gain)
   = null_pokey_sound;
 
-#ifdef SERIO_SOUND
-static void Update_serio_sound_rf(int out, UBYTE data);
-static void null_serio_sound(int out, UBYTE data) {}
-void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
-int serio_sound_enabled = 1;
-#endif
-
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
 /* For better accuracy, the Samp_n_cnt has a fixed binary decimal point      */
@@ -180,9 +173,6 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 	uint8 chan;
 
 	Update_pokey_sound = Update_pokey_sound_rf;
-#ifdef SERIO_SOUND
-	Update_serio_sound = Update_serio_sound_rf;
-#endif
 
 	samp_freq = playback_freq;
 
@@ -763,38 +753,3 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 	if (sampbuf_rptr == sampbuf_ptr)
 		sampbuf_last = cpu_clock;
 }
-
-#ifdef SERIO_SOUND
-static void Update_serio_sound_rf(int out, UBYTE data)
-{
-	int bits, pv, future;
-	if (!serio_sound_enabled) return;
-
-	pv = 0;
-	future = 0;
-	bits = (data << 1) | 0x200;
-	while (bits)
-	{
-		sampbuf_lastval -= pv;
-		pv = (bits & 0x01) * AUDV[3];	/* FIXME!!! - set volume from AUDV */
-		sampbuf_lastval += pv;
-
-	sampbuf_val[sampbuf_ptr] = sampbuf_lastval;
-	sampbuf_cnt[sampbuf_ptr] =
-		(cpu_clock + future-sampbuf_last) * 128 * samp_freq / 178979;
-	sampbuf_last = cpu_clock + future;
-	sampbuf_ptr++;
-	if (sampbuf_ptr >= SAMPBUF_MAX )
-		sampbuf_ptr = 0;
-	if (sampbuf_ptr == sampbuf_rptr ) {
-		sampbuf_rptr++;
-		if (sampbuf_rptr >= SAMPBUF_MAX)
-			sampbuf_rptr = 0;
-	}
-		/* 1789790/19200 = 93 */
-		future += 93;	/* ~ 19200 bit/s - FIXME!!! set speed form AUDF [2] ??? */
-		bits >>= 1;
-	}
-	sampbuf_lastval -= pv;
-}
-#endif /* SERIO_SOUND */

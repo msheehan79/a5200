@@ -116,9 +116,6 @@ UBYTE POKEY_GetByte(UWORD addr)
 		break;
 	case _SERIN:
 		byte = SERIN;
-#ifdef SERIO_SOUND
-		Update_serio_sound(0,byte);
-#endif
 		break;
 	case _IRQST:
 		byte = IRQST;
@@ -234,9 +231,6 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
 		IRQST |= 0x08;
 		DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
-#ifdef SERIO_SOUND
-		Update_serio_sound(1, byte);
-#endif
 		break;
 	case _STIMER:
 		DivNIRQ[CHAN1] = DivNMax[CHAN1];
