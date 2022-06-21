@@ -579,7 +579,7 @@ static int Device_IsValidForFilename(char ch)
 	}
 }
 
-UWORD Device_SkipDeviceName(void)
+static UWORD Device_SkipDeviceName(void)
 {
 	UWORD bufadr;
 	for (bufadr = dGetWordAligned(ICBALZ); ; bufadr++) {
@@ -1980,21 +1980,6 @@ static void Device_CloseBasicFile(void)
 /* Patches management ---------------------------------------------------- */
 
 int enable_h_patch = TRUE;
-int enable_p_patch = TRUE;
-int enable_r_patch = FALSE;
-
-/* Device_PatchOS is called by Atari800_PatchOS to modify standard device
-   handlers in Atari OS. It puts escape codes at beginnings of OS routines,
-   so the patches work even if they are called directly, without CIO.
-   Returns TRUE if something has been patched.
-   Currently we only patch P: and, in BASIC version, E: and K:.
-   We don't replace C: with H: now, so the cassette works even
-   if H: is enabled.
-*/
-int Device_PatchOS(void)
-{
-	return 0;
-}
 
 /* New handling of H: device.
    Previously we simply replaced C: device in OS with our H:.

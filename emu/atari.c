@@ -181,16 +181,8 @@ void Atari800_RunEsc(UBYTE esc_code)
 }
 
 void Atari800_PatchOS(void) {
-	int patched = Device_PatchOS();
-
-	if (enable_sio_patch) {
-		UWORD addr_l;
-		UWORD addr_s;
-		UBYTE check_s_0;
-		UBYTE check_s_1;
+	if (enable_sio_patch)
 		return;
-	}
-
 	Atari800_RemoveEsc(ESC_COPENLOAD);
 	Atari800_RemoveEsc(ESC_COPENSAVE);
 	Atari800_RemoveEsc(ESC_SIOV);

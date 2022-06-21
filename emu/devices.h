@@ -5,11 +5,8 @@
 #include "atari.h" /* UWORD */
 
 void Device_Initialise(void);
-int Device_PatchOS(void);
 void Device_Frame(void);
 void Device_UpdatePatches(void);
-
-UWORD Device_SkipDeviceName(void);
 
 #define DEFAULT_H_PATH  "H1:>DOS;>DOS"
 
