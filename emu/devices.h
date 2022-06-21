@@ -16,8 +16,6 @@ UWORD Device_SkipDeviceName(void);
 int Device_H_CountOpen(void);
 void Device_H_CloseAll(void);
 
-int Device_SetPrintCommand(const char *command);
-
 #define	ICHIDZ	0x0020
 #define	ICDNOZ	0x0021
 #define	ICCOMZ	0x0022

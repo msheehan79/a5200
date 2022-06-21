@@ -1650,40 +1650,13 @@ static void Device_H_Special(void)
 	SetN;
 }
 
-
-/* P: device emulation --------------------------------------------------- */
-
-char print_command[256] = "lpr %s";
-
-int Device_SetPrintCommand(const char *command)
-{
-	const char *p = command;
-	int was_percent_s = FALSE;
-	while (*p != '\0') {
-		if (*p++ == '%') {
-			char c = *p++;
-			if (c == '%')
-				continue; /* %% is safe */
-			if (c == 's' && !was_percent_s) {
-				was_percent_s = TRUE; /* only one %s is safe */
-				continue;
-			}
-			return FALSE;
-		}
-	}
-	strcpy(print_command, command);
-	return TRUE;
-}
-
 /* K: and E: handlers for BASIC version, using getchar() and putchar() --- */
 
 #ifdef BASIC
 
 static void Device_E_Read(void)
 {
-	int ch;
-
-	ch = getchar();
+	int ch = getchar();
 	switch (ch) {
 	case EOF:
 		Atari800_Exit(FALSE);
@@ -1702,9 +1675,7 @@ static void Device_E_Read(void)
 
 static void Device_E_Write(void)
 {
-	UBYTE ch;
-
-	ch = regA;
+	UBYTE ch = regA;
 	/* XXX: are '\f', '\b' and '\a' fully portable? */
 	switch (ch) {
 	case 0x7d: /* Clear Screen */
@@ -1733,10 +1704,8 @@ static void Device_E_Write(void)
 
 static void Device_K_Read(void)
 {
-	int ch;
 	int ch2;
-
-	ch = getchar();
+	int ch = getchar();
 	switch (ch) {
 	case EOF:
 		Atari800_Exit(FALSE);
