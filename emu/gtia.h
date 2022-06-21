@@ -96,18 +96,9 @@ extern UBYTE P3PL;
 extern UBYTE PRIOR;
 extern UBYTE VDELAY;
 
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-
-extern UWORD colour_translation_table[256];
-#define COLOUR_BLACK colour_translation_table[0]
-#define COLOUR_TO_WORD(dest,src) dest = colour_translation_table[src];
-
-#else
 
 #define COLOUR_BLACK 0
 #define COLOUR_TO_WORD(dest,src) dest = (((UWORD) (src)) << 8) | (src);
-
-#endif /* USE_COLOUR_TRANSLATION_TABLE */
 
 extern UBYTE collisions_mask_missile_playfield;
 extern UBYTE collisions_mask_player_playfield;

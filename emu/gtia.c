@@ -196,28 +196,13 @@ extern UWORD cl_lookup[128];
 
 /* Colours ----------------------------------------------------------------- */
 
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-UWORD colour_translation_table[256];
-#else
 extern UWORD hires_lookup_l[128];
-#endif /* USE_COLOUR_TRANSLATION_TABLE */
 
 extern ULONG lookup_gtia9[16];
 extern ULONG lookup_gtia11[16];
 
 void setup_gtia9_11(void) {
 	int i;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-	UWORD temp;
-	temp = colour_translation_table[COLBK & 0xf0];
-	lookup_gtia11[0] = ((ULONG) temp << 16) + temp;
-	for (i = 1; i < 16; i++) {
-		temp = colour_translation_table[COLBK | i];
-		lookup_gtia9[i] = ((ULONG) temp << 16) + temp;
-		temp = colour_translation_table[COLBK | (i << 4)];
-		lookup_gtia11[i] = ((ULONG) temp << 16) + temp;
-	}
-#else
 	ULONG count9 = 0;
 	ULONG count11 = 0;
 	lookup_gtia11[0] = lookup_gtia9[0] & 0xf0f0f0f0;
@@ -225,7 +210,6 @@ void setup_gtia9_11(void) {
 		lookup_gtia9[i] = lookup_gtia9[0] | (count9 += 0x01010101);
 		lookup_gtia11[i] = lookup_gtia9[0] | (count11 += 0x10101010);
 	}
-#endif
 }
 
 #endif /* defined(BASIC) || defined(CURSES_BASIC) */
@@ -592,225 +576,6 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 
 #else
 
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-	case _COLBK:
-		COLBK = byte &= 0xfe;
-		cl_lookup[C_BAK] = cword = colour_translation_table[byte];
-		if (cword != (UWORD) (lookup_gtia9[0]) ) {
-			lookup_gtia9[0] = cword + (cword << 16);
-			if (PRIOR & 0x40)
-				setup_gtia9_11();
-		}
-		break;
-	case _COLPF0:
-		COLPF0 = byte &= 0xfe;
-		cl_lookup[C_PF0] = cword = colour_translation_table[byte];
-		if ((PRIOR & 1) == 0) {
-			cl_lookup[C_PF0 | C_PM23] = cl_lookup[C_PF0 | C_PM3] = cl_lookup[C_PF0 | C_PM2] = cword;
-			if ((PRIOR & 3) == 0) {
-				if (PRIOR & 0xf) {
-					cl_lookup[C_PF0 | C_PM01] = cl_lookup[C_PF0 | C_PM1] = cl_lookup[C_PF0 | C_PM0] = cword;
-					if ((PRIOR & 0xf) == 0xc)
-						cl_lookup[C_PF0 | C_PM0123] = cl_lookup[C_PF0 | C_PM123] = cl_lookup[C_PF0 | C_PM023] = cword;
-				}
-				else {
-					cl_lookup[C_PF0 | C_PM0] = colour_translation_table[byte | COLPM0];
-					cl_lookup[C_PF0 | C_PM1] = colour_translation_table[byte | COLPM1];
-					cl_lookup[C_PF0 | C_PM01] = colour_translation_table[byte | COLPM0 | COLPM1];
-				}
-			}
-			if ((PRIOR & 0xf) >= 0xa)
-				cl_lookup[C_PF0 | C_PM25] = cword;
-		}
-		break;
-	case _COLPF1:
-		COLPF1 = byte &= 0xfe;
-		cl_lookup[C_PF1] = cword = colour_translation_table[byte];
-		if ((PRIOR & 1) == 0) {
-			cl_lookup[C_PF1 | C_PM23] = cl_lookup[C_PF1 | C_PM3] = cl_lookup[C_PF1 | C_PM2] = cword;
-			if ((PRIOR & 3) == 0) {
-				if (PRIOR & 0xf) {
-					cl_lookup[C_PF1 | C_PM01] = cl_lookup[C_PF1 | C_PM1] = cl_lookup[C_PF1 | C_PM0] = cword;
-					if ((PRIOR & 0xf) == 0xc)
-						cl_lookup[C_PF1 | C_PM0123] = cl_lookup[C_PF1 | C_PM123] = cl_lookup[C_PF1 | C_PM023] = cword;
-				}
-				else {
-					cl_lookup[C_PF1 | C_PM0] = colour_translation_table[byte | COLPM0];
-					cl_lookup[C_PF1 | C_PM1] = colour_translation_table[byte | COLPM1];
-					cl_lookup[C_PF1 | C_PM01] = colour_translation_table[byte | COLPM0 | COLPM1];
-				}
-			}
-		}
-		{
-			UBYTE byte2 = (COLPF2 & 0xf0) + (byte & 0xf);
-			cl_lookup[C_HI2] = cword = colour_translation_table[byte2];
-			cl_lookup[C_HI3] = colour_translation_table[(COLPF3 & 0xf0) | (byte & 0xf)];
-			if (PRIOR & 4)
-				cl_lookup[C_HI2 | C_PM01] = cl_lookup[C_HI2 | C_PM1] = cl_lookup[C_HI2 | C_PM0] = cword;
-			if ((PRIOR & 9) == 0) {
-				if (PRIOR & 0xf)
-					cl_lookup[C_HI2 | C_PM23] = cl_lookup[C_HI2 | C_PM3] = cl_lookup[C_HI2 | C_PM2] = cword;
-				else {
-					cl_lookup[C_HI2 | C_PM2] = colour_translation_table[byte2 | (COLPM2 & 0xf0)];
-					cl_lookup[C_HI2 | C_PM3] = colour_translation_table[byte2 | (COLPM3 & 0xf0)];
-					cl_lookup[C_HI2 | C_PM23] = colour_translation_table[byte2 | ((COLPM2 | COLPM3) & 0xf0)];
-				}
-			}
-		}
-		break;
-	case _COLPF2:
-		COLPF2 = byte &= 0xfe;
-		cl_lookup[C_PF2] = cword = colour_translation_table[byte];
-		{
-			UBYTE byte2 = (byte & 0xf0) + (COLPF1 & 0xf);
-			cl_lookup[C_HI2] = cword2 = colour_translation_table[byte2];
-			if (PRIOR & 4) {
-				cl_lookup[C_PF2 | C_PM01] = cl_lookup[C_PF2 | C_PM1] = cl_lookup[C_PF2 | C_PM0] = cword;
-				cl_lookup[C_HI2 | C_PM01] = cl_lookup[C_HI2 | C_PM1] = cl_lookup[C_HI2 | C_PM0] = cword2;
-			}
-			if ((PRIOR & 9) == 0) {
-				if (PRIOR & 0xf) {
-					cl_lookup[C_PF2 | C_PM23] = cl_lookup[C_PF2 | C_PM3] = cl_lookup[C_PF2 | C_PM2] = cword;
-					cl_lookup[C_HI2 | C_PM23] = cl_lookup[C_HI2 | C_PM3] = cl_lookup[C_HI2 | C_PM2] = cword2;
-				}
-				else {
-					cl_lookup[C_PF2 | C_PM2] = colour_translation_table[byte | COLPM2];
-					cl_lookup[C_PF2 | C_PM3] = colour_translation_table[byte | COLPM3];
-					cl_lookup[C_PF2 | C_PM23] = colour_translation_table[byte | COLPM2 | COLPM3];
-					cl_lookup[C_HI2 | C_PM2] = colour_translation_table[byte2 | (COLPM2 & 0xf0)];
-					cl_lookup[C_HI2 | C_PM3] = colour_translation_table[byte2 | (COLPM3 & 0xf0)];
-					cl_lookup[C_HI2 | C_PM23] = colour_translation_table[byte2 | ((COLPM2 | COLPM3) & 0xf0)];
-				}
-			}
-		}
-		break;
-	case _COLPF3:
-		COLPF3 = byte &= 0xfe;
-		cl_lookup[C_PF3] = cword = colour_translation_table[byte];
-		cl_lookup[C_HI3] = cword2 = colour_translation_table[(byte & 0xf0) | (COLPF1 & 0xf)];
-		if (PRIOR & 4)
-			cl_lookup[C_PF3 | C_PM01] = cl_lookup[C_PF3 | C_PM1] = cl_lookup[C_PF3 | C_PM0] = cword;
-		if ((PRIOR & 9) == 0) {
-			if (PRIOR & 0xf)
-				cl_lookup[C_PF3 | C_PM23] = cl_lookup[C_PF3 | C_PM3] = cl_lookup[C_PF3 | C_PM2] = cword;
-			else {
-				cl_lookup[C_PF3 | C_PM25] = cl_lookup[C_PF2 | C_PM25] = cl_lookup[C_PM25] = cl_lookup[C_PF3 | C_PM2] = colour_translation_table[byte | COLPM2];
-				cl_lookup[C_PF3 | C_PM35] = cl_lookup[C_PF2 | C_PM35] = cl_lookup[C_PM35] = cl_lookup[C_PF3 | C_PM3] = colour_translation_table[byte | COLPM3];
-				cl_lookup[C_PF3 | C_PM235] = cl_lookup[C_PF2 | C_PM235] = cl_lookup[C_PM235] = cl_lookup[C_PF3 | C_PM23] = colour_translation_table[byte | COLPM2 | COLPM3];
-				cl_lookup[C_PF0 | C_PM235] = cl_lookup[C_PF0 | C_PM35] = cl_lookup[C_PF0 | C_PM25] =
-				cl_lookup[C_PF1 | C_PM235] = cl_lookup[C_PF1 | C_PM35] = cl_lookup[C_PF1 | C_PM25] = cword;
-			}
-		}
-		break;
-	case _COLPM0:
-		COLPM0 = byte &= 0xfe;
-		cl_lookup[C_PM023] = cl_lookup[C_PM0] = cword = colour_translation_table[byte];
-		{
-			UBYTE byte2 = byte | COLPM1;
-			cl_lookup[C_PM0123] = cl_lookup[C_PM01] = cword2 = colour_translation_table[byte2];
-			if ((PRIOR & 4) == 0) {
-				cl_lookup[C_PF2 | C_PM0] = cl_lookup[C_PF3 | C_PM0] = cword;
-				cl_lookup[C_PF2 | C_PM01] = cl_lookup[C_PF3 | C_PM01] = cword2;
-				cl_lookup[C_HI2 | C_PM0] = colour_translation_table[(byte & 0xf0) | (COLPF1 & 0xf)];
-				cl_lookup[C_HI2 | C_PM01] = colour_translation_table[(byte2 & 0xf0) | (COLPF1 & 0xf)];
-				if ((PRIOR & 0xc) == 0) {
-					if (PRIOR & 3) {
-						cl_lookup[C_PF0 | C_PM0] = cl_lookup[C_PF1 | C_PM0] = cword;
-						cl_lookup[C_PF0 | C_PM01] = cl_lookup[C_PF1 | C_PM01] = cword2;
-					}
-					else {
-						cl_lookup[C_PF0 | C_PM0] = colour_translation_table[byte | COLPF0];
-						cl_lookup[C_PF1 | C_PM0] = colour_translation_table[byte | COLPF1];
-						cl_lookup[C_PF0 | C_PM01] = colour_translation_table[byte2 | COLPF0];
-						cl_lookup[C_PF1 | C_PM01] = colour_translation_table[byte2 | COLPF1];
-					}
-				}
-			}
-		}
-		break;
-	case _COLPM1:
-		COLPM1 = byte &= 0xfe;
-		cl_lookup[C_PM123] = cl_lookup[C_PM1] = cword = colour_translation_table[byte];
-		{
-			UBYTE byte2 = byte | COLPM0;
-			cl_lookup[C_PM0123] = cl_lookup[C_PM01] = cword2 = colour_translation_table[byte2];
-			if ((PRIOR & 4) == 0) {
-				cl_lookup[C_PF2 | C_PM1] = cl_lookup[C_PF3 | C_PM1] = cword;
-				cl_lookup[C_PF2 | C_PM01] = cl_lookup[C_PF3 | C_PM01] = cword2;
-				cl_lookup[C_HI2 | C_PM1] = colour_translation_table[(byte & 0xf0) | (COLPF1 & 0xf)];
-				cl_lookup[C_HI2 | C_PM01] = colour_translation_table[(byte2 & 0xf0) | (COLPF1 & 0xf)];
-				if ((PRIOR & 0xc) == 0) {
-					if (PRIOR & 3) {
-						cl_lookup[C_PF0 | C_PM1] = cl_lookup[C_PF1 | C_PM1] = cword;
-						cl_lookup[C_PF0 | C_PM01] = cl_lookup[C_PF1 | C_PM01] = cword2;
-					}
-					else {
-						cl_lookup[C_PF0 | C_PM1] = colour_translation_table[byte | COLPF0];
-						cl_lookup[C_PF1 | C_PM1] = colour_translation_table[byte | COLPF1];
-						cl_lookup[C_PF0 | C_PM01] = colour_translation_table[byte2 | COLPF0];
-						cl_lookup[C_PF1 | C_PM01] = colour_translation_table[byte2 | COLPF1];
-					}
-				}
-			}
-		}
-		break;
-	case _COLPM2:
-		COLPM2 = byte &= 0xfe;
-		cl_lookup[C_PM2] = cword = colour_translation_table[byte];
-		{
-			UBYTE byte2 = byte | COLPM3;
-			cl_lookup[C_PM23] = cword2 = colour_translation_table[byte2];
-			if (PRIOR & 1) {
-				cl_lookup[C_PF0 | C_PM2] = cl_lookup[C_PF1 | C_PM2] = cword;
-				cl_lookup[C_PF0 | C_PM23] = cl_lookup[C_PF1 | C_PM23] = cword2;
-			}
-			if ((PRIOR & 6) == 0) {
-				if (PRIOR & 9) {
-					cl_lookup[C_PF2 | C_PM2] = cl_lookup[C_PF3 | C_PM2] = cword;
-					cl_lookup[C_PF2 | C_PM23] = cl_lookup[C_PF3 | C_PM23] = cword2;
-					cl_lookup[C_HI2 | C_PM2] = colour_translation_table[(byte & 0xf0) | (COLPF1 & 0xf)];
-					cl_lookup[C_HI2 | C_PM23] = colour_translation_table[(byte2 & 0xf0) | (COLPF1 & 0xf)];
-				}
-				else {
-					cl_lookup[C_PF2 | C_PM2] = colour_translation_table[byte | COLPF2];
-					cl_lookup[C_PF3 | C_PM25] = cl_lookup[C_PF2 | C_PM25] = cl_lookup[C_PM25] = cl_lookup[C_PF3 | C_PM2] = colour_translation_table[byte | COLPF3];
-					cl_lookup[C_PF2 | C_PM23] = colour_translation_table[byte2 | COLPF2];
-					cl_lookup[C_PF3 | C_PM235] = cl_lookup[C_PF2 | C_PM235] = cl_lookup[C_PM235] = cl_lookup[C_PF3 | C_PM23] = colour_translation_table[byte2 | COLPF3];
-					cl_lookup[C_HI2 | C_PM2] = colour_translation_table[((byte | COLPF2) & 0xf0) | (COLPF1 & 0xf)];
-					cl_lookup[C_HI2 | C_PM25] = colour_translation_table[((byte | COLPF3) & 0xf0) | (COLPF1 & 0xf)];
-					cl_lookup[C_HI2 | C_PM23] = colour_translation_table[((byte2 | COLPF2) & 0xf0) | (COLPF1 & 0xf)];
-					cl_lookup[C_HI2 | C_PM235] = colour_translation_table[((byte2 | COLPF3) & 0xf0) | (COLPF1 & 0xf)];
-				}
-			}
-		}
-		break;
-	case _COLPM3:
-		COLPM3 = byte &= 0xfe;
-		cl_lookup[C_PM3] = cword = colour_translation_table[byte];
-		{
-			UBYTE byte2 = byte | COLPM2;
-			cl_lookup[C_PM23] = cword2 = colour_translation_table[byte2];
-			if (PRIOR & 1) {
-				cl_lookup[C_PF0 | C_PM3] = cl_lookup[C_PF1 | C_PM3] = cword;
-				cl_lookup[C_PF0 | C_PM23] = cl_lookup[C_PF1 | C_PM23] = cword2;
-			}
-			if ((PRIOR & 6) == 0) {
-				if (PRIOR & 9) {
-					cl_lookup[C_PF2 | C_PM3] = cl_lookup[C_PF3 | C_PM3] = cword;
-					cl_lookup[C_PF2 | C_PM23] = cl_lookup[C_PF3 | C_PM23] = cword2;
-				}
-				else {
-					cl_lookup[C_PF2 | C_PM3] = colour_translation_table[byte | COLPF2];
-					cl_lookup[C_PF3 | C_PM35] = cl_lookup[C_PF2 | C_PM35] = cl_lookup[C_PM35] = cl_lookup[C_PF3 | C_PM3] = colour_translation_table[byte | COLPF3];
-					cl_lookup[C_PF2 | C_PM23] = colour_translation_table[byte2 | COLPF2];
-					cl_lookup[C_PF3 | C_PM235] = cl_lookup[C_PF2 | C_PM235] = cl_lookup[C_PM235] = cl_lookup[C_PF3 | C_PM23] = colour_translation_table[byte2 | COLPF3];
-					cl_lookup[C_HI2 | C_PM3] = colour_translation_table[((byte | COLPF2) & 0xf0) | (COLPF1 & 0xf)];
-					cl_lookup[C_HI2 | C_PM23] = colour_translation_table[((byte2 | COLPF2) & 0xf0) | (COLPF1 & 0xf)];
-				}
-			}
-		}
-		break;
-#else /* USE_COLOUR_TRANSLATION_TABLE */
 	case _COLBK:
 		COLBK = byte &= 0xfe;
 		COLOUR_TO_WORD(cword,byte);
@@ -978,7 +743,6 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 			}
 		}
 		break;
-#endif /* USE_COLOUR_TRANSLATION_TABLE */
 	case _GRAFM:
 		GRAFM = byte;
 		UPDATE_PM_CYCLE_EXACT

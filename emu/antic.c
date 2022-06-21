@@ -544,10 +544,8 @@ static UWORD hires_lookup_m[128];
 #define hires_norm(x)	hires_lookup_n[(x) >> 1]
 #define hires_mask(x)	hires_lookup_m[(x) >> 1]
 
-#ifndef USE_COLOUR_TRANSLATION_TABLE
 UWORD hires_lookup_l[128];	/* accessed in gtia.c */
 #define hires_lum(x)	hires_lookup_l[(x) >> 1]
-#endif
 
 /* Player/Missile Graphics ------------------------------------------------- */
 
@@ -817,16 +815,10 @@ void ANTIC_Initialise(void) {
 	playfield_lookup[0x100] = L_PF3;
 	blank_lookup[0x80] = blank_lookup[0xa0] = blank_lookup[0xc0] = blank_lookup[0xe0] = 0x00;
 	hires_mask(0x00) = 0xffff;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-	hires_mask(0x40) = BYTE0_MASK;
-	hires_mask(0x80) = BYTE1_MASK;
-	hires_mask(0xc0) = 0;
-#else
 	hires_mask(0x40) = HIRES_MASK_01;
 	hires_mask(0x80) = HIRES_MASK_10;
 	hires_mask(0xc0) = 0xf0f0;
 	hires_lum(0x00) = hires_lum(0x40) = hires_lum(0x80) = hires_lum(0xc0) = 0;
-#endif
 	init_pm_lookup();
 	mode_e_an_lookup[0] = 0;
 	mode_e_an_lookup[1] = mode_e_an_lookup[4] = mode_e_an_lookup[0x10] = mode_e_an_lookup[0x40] = 0;
@@ -920,11 +912,7 @@ static void do_border_gtia11(void)
 	UWORD *ptr = &scrn_ptr[LBORDER_START];
 	const UBYTE *pm_scanline_ptr = &pm_scanline[LBORDER_START];
 	ULONG background = lookup_gtia11[0];
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-	cl_lookup[C_PF3] = colour_translation_table[COLPF3 & 0xf0];
-#else
 	cl_lookup[C_PF3] &= 0xf0f0;
-#endif
 	cl_lookup[C_BAK] = (UWORD) background;
 	/* left border */
 	for (kk = left_border_chars; kk; kk--)
@@ -972,11 +960,7 @@ static void draw_antic_0_gtia11(void)
 	if (pm_dirty) {
 		const UBYTE *pm_scanline_ptr = &pm_scanline[LBORDER_START];
 		ULONG background = lookup_gtia11[0];
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-		cl_lookup[C_PF3] = colour_translation_table[COLPF3 & 0xf0];
-#else
 		cl_lookup[C_PF3] &= 0xf0f0;
-#endif
 		cl_lookup[C_BAK] = (UWORD) background;
 		do
 			DO_BORDER
@@ -1007,11 +991,7 @@ static void draw_an_gtia9(const ULONG *t_pm_scanline_ptr)
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
 			if (pm_reg == L_PF3) {
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-				WRITE_VIDEO(ptr, colour_translation_table[pixel | COLPF3]);
-#else
 				WRITE_VIDEO(ptr, pixel | (pixel << 8) | cl_lookup[C_PF3]);
-#endif
 			}
 			else {
 				WRITE_VIDEO(ptr, COLOUR(pm_reg));
@@ -1021,11 +1001,7 @@ static void draw_an_gtia9(const ULONG *t_pm_scanline_ptr)
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
 			if (pm_reg == L_PF3) {
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-				WRITE_VIDEO(ptr + 1, colour_translation_table[pixel | COLPF3]);
-#else
 				WRITE_VIDEO(ptr + 1, pixel | (pixel << 8) | cl_lookup[C_PF3]);
-#endif
 			}
 			else {
 				WRITE_VIDEO(ptr + 1, COLOUR(pm_reg));
@@ -1091,11 +1067,7 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
 			if (pm_reg == L_PF3) {
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-				WRITE_VIDEO(ptr, colour_translation_table[pixel ? pixel | COLPF3 : COLPF3 & 0xf0]);
-#else
 				WRITE_VIDEO(ptr, pixel ? pixel | (pixel << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
-#endif
 			}
 			else {
 				WRITE_VIDEO(ptr, COLOUR(pm_reg));
@@ -1105,11 +1077,7 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 		pm_reg = pm_scanline[i];
 		if (pm_reg) {
 			if (pm_reg == L_PF3) {
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-				WRITE_VIDEO(ptr + 1, colour_translation_table[pixel ? pixel | COLPF3 : COLPF3 & 0xf0]);
-#else
 				WRITE_VIDEO(ptr + 1, pixel ? pixel | (pixel << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
-#endif
 			}
 			else {
 				WRITE_VIDEO(ptr + 1, COLOUR(pm_reg));
@@ -1151,30 +1119,6 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 #define FOUR_LOOP_END(data) } while (--k);
 #endif
 
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-
-#define INIT_HIRES hires_norm(0x00) = cl_lookup[C_PF2];\
-	hires_norm(0x40) = hires_norm(0x10) = hires_norm(0x04) = (cl_lookup[C_PF2] & BYTE0_MASK) | (cl_lookup[C_HI2] & BYTE1_MASK);\
-	hires_norm(0x80) = hires_norm(0x20) = hires_norm(0x08) = (cl_lookup[C_HI2] & BYTE0_MASK) | (cl_lookup[C_PF2] & BYTE1_MASK);\
-	hires_norm(0xc0) = hires_norm(0x30) = hires_norm(0x0c) = cl_lookup[C_HI2];
-
-#define DO_PMG_HIRES(data) {\
-	const UBYTE *c_pm_scanline_ptr = (const UBYTE *) t_pm_scanline_ptr;\
-	int pm_pixel;\
-	int mask;\
-	FOUR_LOOP_BEGIN(data)\
-		pm_pixel = *c_pm_scanline_ptr++;\
-		if (data & 0xc0)\
-			PF2PM |= pm_pixel;\
-		mask = hires_mask(data & 0xc0);\
-		pm_pixel = pm_lookup_ptr[pm_pixel] | L_PF2;\
-		WRITE_VIDEO(ptr++, (COLOUR(pm_pixel) & mask) | (COLOUR(pm_pixel + (L_HI2 - L_PF2)) & ~mask));\
-		data <<= 2;\
-	FOUR_LOOP_END(data)\
-}
-
-#else /* USE_COLOUR_TRANSLATION_TABLE */
-
 #define INIT_HIRES hires_norm(0x00) = cl_lookup[C_PF2];\
 	hires_norm(0x40) = hires_norm(0x10) = hires_norm(0x04) = (cl_lookup[C_PF2] & HIRES_MASK_01) | hires_lum(0x40);\
 	hires_norm(0x80) = hires_norm(0x20) = hires_norm(0x08) = (cl_lookup[C_PF2] & HIRES_MASK_10) | hires_lum(0x80);\
@@ -1191,8 +1135,6 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 		data <<= 2;\
 	FOUR_LOOP_END(data)\
 }
-
-#endif /* USE_COLOUR_TRANSLATION_TABLE */
 
 
 #ifdef NEW_CYCLE_EXACT
@@ -1356,11 +1298,7 @@ static void draw_antic_2_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 				if (pm_reg) {
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? chdata >> 4 : chdata & 0xf;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-						WRITE_VIDEO(ptr, colour_translation_table[tmp | COLPF3]);
-#else
 						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
-#endif
 					}
 					else
 					{
@@ -1457,11 +1395,7 @@ static void draw_antic_2_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 				if (pm_reg) {
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? chdata & 0xf0 : chdata << 4;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-						WRITE_VIDEO(ptr, colour_translation_table[tmp ? tmp | COLPF3 : COLPF3 & 0xf0]);
-#else
 						WRITE_VIDEO(ptr, tmp ? tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
-#endif
 					}
 					else
 					{
@@ -1933,11 +1867,7 @@ static void draw_antic_e_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 				if (pm_reg) {
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? screendata >> 4 : screendata & 0xf;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-						WRITE_VIDEO(ptr, colour_translation_table[tmp | COLPF3]);
-#else
 						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
-#endif
 					}
 					else
 					{
@@ -2041,11 +1971,7 @@ static void draw_antic_f_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 				if (pm_reg) {
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? screendata >> 4 : screendata & 0xf;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-						WRITE_VIDEO(ptr, colour_translation_table[tmp | COLPF3]);
-#else
 						WRITE_VIDEO(ptr, tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3]);
-#endif
 					}
 					else {
 						WRITE_VIDEO(ptr, COLOUR(pm_reg));
@@ -2131,11 +2057,7 @@ static void draw_antic_f_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 				if (pm_reg) {
 					if (pm_reg == L_PF3) {
 						UBYTE tmp = k > 2 ? screendata & 0xf0 : screendata << 4;
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-						WRITE_VIDEO(ptr, colour_translation_table[tmp ? tmp | COLPF3 : COLPF3 & 0xf0]);
-#else
 						WRITE_VIDEO(ptr, tmp ? tmp | ((UWORD)tmp << 8) | cl_lookup[C_PF3] : cl_lookup[C_PF3] & 0xf0f0);
-#endif
 					}
 					else
 					{
@@ -3191,69 +3113,6 @@ UBYTE ANTIC_GetByte(UWORD addr)
 void set_prior(UBYTE byte)
 {
 	if ((byte ^ PRIOR) & 0x0f) {
-#ifdef USE_COLOUR_TRANSLATION_TABLE
-		UBYTE col = 0;
-		UBYTE col2 = 0;
-		UBYTE hi;
-		UBYTE hi2;
-		if ((byte & 3) == 0) {
-			col = COLPF0;
-			col2 = COLPF1;
-		}
-		if ((byte & 0xc) == 0) {
-			cl_lookup[C_PF0 | C_PM0] = colour_translation_table[col | COLPM0];
-			cl_lookup[C_PF0 | C_PM1] = colour_translation_table[col | COLPM1];
-			cl_lookup[C_PF0 | C_PM01] = colour_translation_table[col | COLPM0 | COLPM1];
-			cl_lookup[C_PF1 | C_PM0] = colour_translation_table[col2 | COLPM0];
-			cl_lookup[C_PF1 | C_PM1] = colour_translation_table[col2 | COLPM1];
-			cl_lookup[C_PF1 | C_PM01] = colour_translation_table[col2 | COLPM0 | COLPM1];
-		}
-		else {
-			cl_lookup[C_PF0 | C_PM01] = cl_lookup[C_PF0 | C_PM1] = cl_lookup[C_PF0 | C_PM0] = colour_translation_table[col];
-			cl_lookup[C_PF1 | C_PM01] = cl_lookup[C_PF1 | C_PM1] = cl_lookup[C_PF1 | C_PM0] = colour_translation_table[col2];
-		}
-		if (byte & 4) {
-			cl_lookup[C_PF2 | C_PM01] = cl_lookup[C_PF2 | C_PM1] = cl_lookup[C_PF2 | C_PM0] = cl_lookup[C_PF2];
-			cl_lookup[C_PF3 | C_PM01] = cl_lookup[C_PF3 | C_PM1] = cl_lookup[C_PF3 | C_PM0] = cl_lookup[C_PF3];
-			cl_lookup[C_HI2 | C_PM01] = cl_lookup[C_HI2 | C_PM1] = cl_lookup[C_HI2 | C_PM0] = cl_lookup[C_HI2];
-		}
-		else {
-			cl_lookup[C_PF3 | C_PM0] = cl_lookup[C_PF2 | C_PM0] = cl_lookup[C_PM0];
-			cl_lookup[C_PF3 | C_PM1] = cl_lookup[C_PF2 | C_PM1] = cl_lookup[C_PM1];
-			cl_lookup[C_PF3 | C_PM01] = cl_lookup[C_PF2 | C_PM01] = cl_lookup[C_PM01];
-			cl_lookup[C_HI2 | C_PM0] = colour_translation_table[(COLPM0 & 0xf0) | (COLPF1 & 0xf)];
-			cl_lookup[C_HI2 | C_PM1] = colour_translation_table[(COLPM1 & 0xf0) | (COLPF1 & 0xf)];
-			cl_lookup[C_HI2 | C_PM01] = colour_translation_table[((COLPM0 | COLPM1) & 0xf0) | (COLPF1 & 0xf)];
-		}
-		col = col2 = 0;
-		hi = hi2 = COLPF1 & 0xf;
-		cl_lookup[C_BLACK - C_PF2 + C_HI2] = colour_translation_table[hi];
-		if ((byte & 9) == 0) {
-			col = COLPF2;
-			col2 = COLPF3;
-			hi |= col & 0xf0;
-			hi2 |= col2 & 0xf0;
-		}
-		if ((byte & 6) == 0) {
-			cl_lookup[C_PF2 | C_PM2] = colour_translation_table[col | COLPM2];
-			cl_lookup[C_PF2 | C_PM3] = colour_translation_table[col | COLPM3];
-			cl_lookup[C_PF2 | C_PM23] = colour_translation_table[col | COLPM2 | COLPM3];
-			cl_lookup[C_PF3 | C_PM2] = colour_translation_table[col2 | COLPM2];
-			cl_lookup[C_PF3 | C_PM3] = colour_translation_table[col2 | COLPM3];
-			cl_lookup[C_PF3 | C_PM23] = colour_translation_table[col2 | COLPM2 | COLPM3];
-			cl_lookup[C_HI2 | C_PM2] = colour_translation_table[hi | (COLPM2 & 0xf0)];
-			cl_lookup[C_HI2 | C_PM3] = colour_translation_table[hi | (COLPM3 & 0xf0)];
-			cl_lookup[C_HI2 | C_PM23] = colour_translation_table[hi | ((COLPM2 | COLPM3) & 0xf0)];
-			cl_lookup[C_HI2 | C_PM25] = colour_translation_table[hi2 | (COLPM2 & 0xf0)];
-			cl_lookup[C_HI2 | C_PM35] = colour_translation_table[hi2 | (COLPM3 & 0xf0)];
-			cl_lookup[C_HI2 | C_PM235] = colour_translation_table[hi2 | ((COLPM2 | COLPM3) & 0xf0)];
-		}
-		else {
-			cl_lookup[C_PF2 | C_PM23] = cl_lookup[C_PF2 | C_PM3] = cl_lookup[C_PF2 | C_PM2] = colour_translation_table[col];
-			cl_lookup[C_PF3 | C_PM23] = cl_lookup[C_PF3 | C_PM3] = cl_lookup[C_PF3 | C_PM2] = colour_translation_table[col2];
-			cl_lookup[C_HI2 | C_PM23] = cl_lookup[C_HI2 | C_PM3] = cl_lookup[C_HI2 | C_PM2] = colour_translation_table[hi];
-		}
-#else /* USE_COLOUR_TRANSLATION_TABLE */
 		UWORD cword = 0;
 		UWORD cword2 = 0;
 		if ((byte & 3) == 0) {
@@ -3298,7 +3157,6 @@ void set_prior(UBYTE byte)
 			cl_lookup[C_PF2 | C_PM23] = cl_lookup[C_PF2 | C_PM3] = cl_lookup[C_PF2 | C_PM2] = cword;
 			cl_lookup[C_PF3 | C_PM23] = cl_lookup[C_PF3 | C_PM3] = cl_lookup[C_PF3 | C_PM2] = cword2;
 		}
-#endif /* USE_COLOUR_TRANSLATION_TABLE */
 		if (byte & 1) {
 			cl_lookup[C_PF1 | C_PM2] = cl_lookup[C_PF0 | C_PM2] = cl_lookup[C_PM2];
 			cl_lookup[C_PF1 | C_PM3] = cl_lookup[C_PF0 | C_PM3] = cl_lookup[C_PM3];
