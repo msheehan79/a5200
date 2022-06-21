@@ -44,8 +44,9 @@ int Util_chrieq(char c1, char c2)
 	case 0x20:
 		return (c1 >= 'A' && c1 <= 'Z') || (c1 >= 'a' && c1 <= 'z');
 	default:
-		return FALSE;
+		break;
 	}
+	return FALSE;
 }
 
 char *Util_stpcpy(char *dest, const char *src)
@@ -53,13 +54,6 @@ char *Util_stpcpy(char *dest, const char *src)
 	size_t len = strlen(src);
 	memcpy(dest, src, len + 1);
 	return dest + len;
-}
-
-char *Util_strlcpy(char *dest, const char *src, size_t size)
-{
-	strncpy(dest, src, size);
-	dest[size - 1] = '\0';
-	return dest;
 }
 
 char *Util_strupper(char *s)
@@ -71,104 +65,6 @@ char *Util_strupper(char *s)
 	return s;
 }
 
-char *Util_strlower(char *s)
-{
-	char *p;
-	for (p = s; *p != '\0'; p++)
-		if (*p >= 'A' && *p <= 'Z')
-			*p += 'a' - 'A';
-	return s;
-}
-
-void Util_chomp(char *s)
-{
-	int len;
-
-	len = strlen(s);
-	if (len >= 2 && s[len - 1] == '\n' && s[len - 2] == '\r')
-		s[len - 2] = '\0';
-	else if (len >= 1 && (s[len - 1] == '\n' || s[len - 1] == '\r'))
-		s[len - 1] = '\0';
-}
-
-void Util_trim(char *s)
-{
-	char *p = s;
-	char *q;
-	/* skip leading whitespace */
-	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
-		p++;
-	/* now p points at the first non-whitespace character */
-
-	if (*p == '\0') {
-		/* only whitespace */
-		*s = '\0';
-		return;
-	}
-
-	q = s + strlen(s);
-	/* skip trailing whitespace */
-	/* we have found p < q such that *p is non-whitespace,
-	   so this loop terminates with q >= p */
-	do
-		q--;
-	while (*q == ' ' || *q == '\t' || *q == '\r' || *q == '\n');
-
-	/* now q points at the last non-whitespace character */
-	/* cut off trailing whitespace */
-	*++q = '\0';
-
-	/* move to string */
-	memmove(s, p, q + 1 - p);
-}
-
-int Util_sscandec(const char *s)
-{
-	int result;
-	if (*s == '\0')
-		return -1;
-	result = 0;
-	for (;;) {
-		if (*s >= '0' && *s <= '9')
-			result = 10 * result + *s - '0';
-		else if (*s == '\0')
-			return result;
-		else
-			return -1;
-		s++;
-	}
-}
-
-int Util_sscanhex(const char *s)
-{
-	int result;
-	if (*s == '\0')
-		return -1;
-	result = 0;
-	for (;;) {
-		if (*s >= '0' && *s <= '9')
-			result = 16 * result + *s - '0';
-		else if (*s >= 'A' && *s <= 'F')
-			result = 16 * result + *s - 'A' + 10;
-		else if (*s >= 'a' && *s <= 'f')
-			result = 16 * result + *s - 'a' + 10;
-		else if (*s == '\0')
-			return result;
-		else
-			return -1;
-		s++;
-	}
-}
-
-int Util_sscanbool(const char *s)
-{
-	if (*s == '0' && s[1] == '\0')
-		return 0;
-	if (*s == '1' && s[1] == '\0')
-		return 1;
-	return -1;
-}
-
 void *Util_malloc(size_t size)
 {
 	void *ptr = malloc(size);
@@ -178,26 +74,6 @@ void *Util_malloc(size_t size)
 		exit(1);
 	}
   memset(ptr, 0, size);
-	return ptr;
-}
-
-void *Util_realloc(void *ptr, size_t size)
-{
-	ptr = realloc(ptr, size);
-	if (ptr == NULL) {
-		Atari800_Exit(FALSE);
-		printf("Fatal error: out of memory\n");
-		exit(1);
-	}
-	return ptr;
-}
-
-char *Util_strdup(const char *s)
-{
-	/* don't use strdup(): it is unavailable on WinCE */
-	size_t size = strlen(s) + 1;
-	char *ptr = (char *) Util_malloc(size);
-	memcpy(ptr, s, size); /* faster than strcpy(ptr, s) */
 	return ptr;
 }
 

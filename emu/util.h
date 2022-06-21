@@ -29,46 +29,13 @@ int Util_chrieq(char c1, char c2);
    and returns a pointer to the trailing NUL in dest. */
 char *Util_stpcpy(char *dest, const char *src);
 
-/* Same as strlcpy() in some C libraries: copies src to dest
-   and terminates the string. Never writes more than size characters
-   to dest (the result may be truncated). Returns dest. */
-char *Util_strlcpy(char *dest, const char *src, size_t size);
-
 /* Modifies the string to uppercase and returns it. */
 char *Util_strupper(char *s);
-
-/* Modifies the string to lowercase and returns it. */
-char *Util_strlower(char *s);
-
-/* Similar to Perl's chomp(): removes trailing LF, CR or CR/LF. */
-void Util_chomp(char *s);
-
-/* Similar to Basic's trim(): removes leading and trailing whitespace. */
-void Util_trim(char *s);
-
-/* Converts the string to a non-negative integer and returns it.
-   The string must represent the number and nothing else.
-   -1 indicates an error. */
-int Util_sscandec(const char *s);
-
-/* Likewise, but parses hexadecimal numbers. */
-int Util_sscanhex(const char *s);
-
-/* Likewise, but allows only 0 and 1. */
-int Util_sscanbool(const char *s);
-
 
 /* Memory management ----------------------------------------------------- */
 
 /* malloc() with out-of-memory checking. Never returns NULL. */
 void *Util_malloc(size_t size);
-
-/* realloc() with out-of-memory checking. Never returns NULL. */
-void *Util_realloc(void *ptr, size_t size);
-
-/* strdup() with out-of-memory checking. Never returns NULL. */
-char *Util_strdup(const char *s);
-
 
 /* Filenames ------------------------------------------------------------- */
 
@@ -104,11 +71,7 @@ int Util_fileexists(const char *filename);
 int Util_direxists(const char *filename);
 
 /* Rewinds the stream to its beginning. */
-#ifdef HAVE_REWIND
-#define Util_rewind(fp) rewind(fp)
-#else
 #define Util_rewind(fp) fseek(fp, 0, SEEK_SET)
-#endif
 
 /* Returns the length of an open stream.
    May change the current position. */
