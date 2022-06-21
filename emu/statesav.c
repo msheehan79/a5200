@@ -311,9 +311,6 @@ int SaveAtariState(uint8_t *data, size_t size, UBYTE SaveVerbose)
    GTIAStateSave();
    PIAStateSave();
    POKEYStateSave();
-#ifdef DREAMCAST
-   DCStateSave();
-#endif
 
    /* Close memory stream */
    memstream_close(state_stream);
@@ -380,9 +377,6 @@ int ReadAtariState(const uint8_t *data, size_t size)
    GTIAStateRead();
    PIAStateRead();
    POKEYStateRead();
-#ifdef DREAMCAST
-   DCStateRead();
-#endif
 
    /* Close memory stream */
    memstream_close(state_stream);
