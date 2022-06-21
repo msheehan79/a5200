@@ -64,9 +64,6 @@ void Util_catpath(char *result, const char *path1, const char *path2);
 
 /* File I/O -------------------------------------------------------------- */
 
-/* Returns TRUE if the specified file exists. */
-int Util_fileexists(const char *filename);
-
 /* Returns TRUE if the specified directory exists. */
 int Util_direxists(const char *filename);
 
@@ -110,12 +107,7 @@ FILE *Util_uniqopen(char *filename, const char *mode);
    - one that creates unique files but doesn't delete them
      because Util_unlink is not available
 */
-#ifdef HAVE_TMPFILE
-#define Util_tmpbufdef(modifier, def)
-#define Util_fopen(filename, mode, tmpbuf)  fopen(filename, mode)
-#define Util_tmpopen(tmpbuf)                tmpfile()
-#define Util_fclose(fp, tmpbuf)             fclose(fp)
-#elif defined(HAVE_UTIL_UNLINK)
+#if defined(HAVE_UTIL_UNLINK)
 #define Util_tmpbufdef(modifier, def)       modifier char def [FILENAME_MAX];
 #define Util_fopen(filename, mode, tmpbuf)  (tmpbuf[0] = '\0', fopen(filename, mode))
 #define Util_tmpopen(tmpbuf)                Util_uniqopen(tmpbuf, "wb+")

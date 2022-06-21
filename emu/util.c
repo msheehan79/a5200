@@ -121,10 +121,9 @@ void Util_catpath(char *result, const char *path1, const char *path2)
 			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
 }
 
-int Util_fileexists(const char *filename)
+static int Util_fileexists(const char *filename)
 {
-	FILE *fp;
-	fp = fopen(filename, "rb");
+	FILE *fp = fopen(filename, "rb");
 	if (fp == NULL)
 		return FALSE;
 	fclose(fp);
@@ -132,7 +131,6 @@ int Util_fileexists(const char *filename)
 }
 
 #ifdef WIN32
-
 int Util_direxists(const char *filename)
 {
 	DWORD attr;
@@ -148,22 +146,17 @@ int Util_direxists(const char *filename)
 		return FALSE;
 	return (attr & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
 }
-
 #elif defined(HAVE_STAT)
-
 int Util_direxists(const char *filename)
 {
 	struct stat filestatus;
 	return stat(filename, &filestatus) == 0 && (filestatus.st_mode & S_IFDIR);
 }
-
 #else
-
 int Util_direxists(const char *filename)
 {
 	return TRUE;
 }
-
 #endif /* defined(HAVE_STAT) */
 
 
