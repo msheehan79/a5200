@@ -141,41 +141,11 @@ int BIN_loader_start(UBYTE *buffer)
 /* Load BIN file, returns TRUE if ok */
 int BIN_loader(const char *filename) {
 	UBYTE buf[2];
-
-	if (bin_file != NULL) {		/* close previously open file */
+	if (bin_file != NULL)
+	{		/* close previously open file */
 		fclose(bin_file);
 		bin_file = NULL;
 		loading_basic = 0;
 	}
-	if (machine_type == MACHINE_5200)
-		return FALSE;
-	bin_file = fopen(filename, "rb");
-	if (bin_file == NULL) {	/* open */
-		return FALSE;
-	}
-	/* Avoid "BOOT ERROR" when loading a BASIC program */
-	if (drive_status[0] == NoDisk)
-		SIO_DisableDrive(1);
-	if (fread(buf, 1, 2, bin_file) == 2) {
-		if (buf[0] == 0xff && buf[1] == 0xff) {
-			start_binloading = TRUE; /* force SIO to call BIN_loader_start at boot */
-			Coldstart();             /* reboot */
-			return TRUE;
-		}
-		else if (buf[0] == 0 && buf[1] == 0) {
-			loading_basic = LOADING_BASIC_SAVED;
-			Device_PatchOS();
-			Coldstart();
-			return TRUE;
-		}
-		else if (buf[0] >= '0' && buf[0] <= '9') {
-			loading_basic = LOADING_BASIC_LISTED;
-			Device_PatchOS();
-			Coldstart();
-			return TRUE;
-		}
-	}
-	fclose(bin_file);
-	bin_file = NULL;
-	return FALSE;
+	return 0;
 }

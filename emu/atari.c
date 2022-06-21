@@ -97,7 +97,6 @@
 #include "Helpers.h"
 #endif /* __PLUS */
 
-int machine_type = MACHINE_5200;
 int ram_size = 16;
 int tv_mode = TV_NTSC;
 int disable_basic = TRUE;
@@ -189,60 +188,16 @@ void Atari800_PatchOS(void) {
 		UWORD addr_s;
 		UBYTE check_s_0;
 		UBYTE check_s_1;
-		/* patch Open() of C: so we know when a leader is processed */
-		switch (machine_type) {
-		case MACHINE_OSA:
-		case MACHINE_OSB:
-			addr_l = 0xef74;
-			addr_s = 0xefbc;
-			check_s_0 = 0xa0;
-			check_s_1 = 0x80;
-			break;
-		case MACHINE_XLXE:
-			addr_l = 0xfd13;
-			addr_s = 0xfd60;
-			check_s_0 = 0xa9;
-			check_s_1 = 0x03;
-			break;
-		default:
-			return;
-		}
-		/* don't hurt non-standard OSes that may not support cassette at all  */
-		if (dGetByte(addr_l)     == 0xa9 && dGetByte(addr_l + 1) == 0x03
-		 && dGetByte(addr_l + 2) == 0x8d && dGetByte(addr_l + 3) == 0x2a
-		 && dGetByte(addr_l + 4) == 0x02
-		 && dGetByte(addr_s)     == check_s_0
-		 && dGetByte(addr_s + 1) == check_s_1
-		 && dGetByte(addr_s + 2) == 0x20 && dGetByte(addr_s + 3) == 0x5c
-		 && dGetByte(addr_s + 4) == 0xe4) {
-			Atari800_AddEsc(addr_l, ESC_COPENLOAD, CASSETTE_LeaderLoad);
-			Atari800_AddEsc(addr_s, ESC_COPENSAVE, CASSETTE_LeaderSave);
-		}
-		Atari800_AddEscRts(0xe459, ESC_SIOV, SIO);
-		patched = TRUE;
+		return;
 	}
-	else {
-		Atari800_RemoveEsc(ESC_COPENLOAD);
-		Atari800_RemoveEsc(ESC_COPENSAVE);
-		Atari800_RemoveEsc(ESC_SIOV);
-	};
-	if (patched && machine_type == MACHINE_XLXE) {
-		/* Disable Checksum Test */
-		dPutByte(0xc314, 0x8e);
-		dPutByte(0xc315, 0xff);
-		dPutByte(0xc319, 0x8e);
-		dPutByte(0xc31a, 0xff);
-	}
+
+	Atari800_RemoveEsc(ESC_COPENLOAD);
+	Atari800_RemoveEsc(ESC_COPENSAVE);
+	Atari800_RemoveEsc(ESC_SIOV);
 }
 
 void Warmstart(void) {
-	if (machine_type == MACHINE_OSA || machine_type == MACHINE_OSB) {
-		/* RESET key in 400/800 does not reset chips,
-		   but only generates RNMI interrupt */
-		NMIST = 0x3f;
-		NMI();
-	}
-	else {
+	{
 		PIA_Reset();
 		ANTIC_Reset();
 		/* CPU_Reset() must be after PIA_Reset(),
@@ -401,7 +356,7 @@ int Atari800_Initialise(void) {
 	PIA_Initialise();
 	POKEY_Initialise();
 
-  Atari800_InitialiseMachine();
+	Atari800_InitialiseMachine();
 
 	return TRUE;
 }
@@ -495,50 +450,18 @@ void Atari800_PutByte(UWORD addr, UBYTE byte) {
 }
 
 void Atari800_UpdatePatches(void) {
-	switch (machine_type) {
-	case MACHINE_OSA:
-	case MACHINE_OSB:
-		/* Restore unpatched OS */
-		dCopyToMem(atari_os, 0xd800, 0x2800);
-		/* Set patches */
-		Atari800_PatchOS();
-		Device_UpdatePatches();
-		break;
-	case MACHINE_XLXE:
-		/* Don't patch if OS disabled */
-		if ((PORTB & 1) == 0)
-			break;
-		/* Restore unpatched OS */
-		dCopyToMem(atari_os, 0xc000, 0x1000);
-		dCopyToMem(atari_os + 0x1800, 0xd800, 0x2800);
-		/* Set patches */
-		Atari800_PatchOS();
-		Device_UpdatePatches();
-		break;
-	default:
-		break;
-	}
 }
 
 #ifndef __PLUS
 
-unsigned int refresh_counter;
-
-void Atari800_Frame(unsigned int refresh_rate) {
-	//ALEK Device_Frame();
+void Atari800_Frame(void)
+{
 #ifndef BASIC
 	INPUT_Frame();
 #endif
 	GTIA_Frame();
-
-	if (++refresh_counter >= refresh_rate) {
-		refresh_counter = 0;
-		ANTIC_Frame(TRUE);
-	}
-	else {
-		ANTIC_Frame(FALSE);
-	}
-  POKEY_Frame();
+	ANTIC_Frame();
+	POKEY_Frame();
 }
 
 #endif /* __PLUS */
@@ -562,54 +485,9 @@ void MainStateSave(void) {
 	}
 	SaveUBYTE(&temp, 1);
 
-	switch (machine_type) {
-	case MACHINE_OSA:
-		temp = ram_size == 16 ? 5 : 0;
-		os = 1;
-		default_system = 1;
-		break;
-	case MACHINE_OSB:
-		temp = ram_size == 16 ? 5 : 0;
-		os = 2;
-		default_system = 2;
-		break;
-	case MACHINE_XLXE:
-		switch (ram_size) {
-		case 16:
-			temp = 6;
-			default_system = 3;
-			break;
-		case 64:
-			temp = 1;
-			default_system = 3;
-			break;
-		case 128:
-			temp = 2;
-			default_system = 4;
-			break;
-		case 192:
-			temp = 9;
-			default_system = 8;
-			break;
-		case RAM_320_RAMBO:
-		case RAM_320_COMPY_SHOP:
-			temp = 3;
-			default_system = 5;
-			break;
-		case 576:
-			temp = 7;
-			default_system = 6;
-			break;
-		case 1088:
-			temp = 8;
-			default_system = 7;
-			break;
-		}
-		break;
-	case MACHINE_5200:
+	{
 		temp = 4;
 		default_system = 6;
-		break;
 	}
 	SaveUBYTE(&temp, 1);
 
@@ -632,53 +510,7 @@ void MainStateRead(void) {
 
 	ReadUBYTE(&temp, 1);
 	ReadINT(&os, 1);
-	switch (temp) {
-	case 0:
-		machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
-		ram_size = 48;
-		break;
-	case 1:
-		machine_type = MACHINE_XLXE;
-		ram_size = 64;
-		break;
-	case 2:
-		machine_type = MACHINE_XLXE;
-		ram_size = 128;
-		break;
-	case 3:
-		machine_type = MACHINE_XLXE;
-		ram_size = RAM_320_COMPY_SHOP;
-		break;
-	case 4:
-		machine_type = MACHINE_5200;
-		ram_size = 16;
-		break;
-	case 5:
-		machine_type = os == 1 ? MACHINE_OSA : MACHINE_OSB;
-		ram_size = 16;
-		break;
-	case 6:
-		machine_type = MACHINE_XLXE;
-		ram_size = 16;
-		break;
-	case 7:
-		machine_type = MACHINE_XLXE;
-		ram_size = 576;
-		break;
-	case 8:
-		machine_type = MACHINE_XLXE;
-		ram_size = 1088;
-		break;
-	case 9:
-		machine_type = MACHINE_XLXE;
-		ram_size = 192;
-		break;
-	default:
-		machine_type = MACHINE_XLXE;
-		ram_size = 64;
-		break;
-	}
-
+	ram_size = 16;
 	ReadINT(&pil_on, 1);
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);

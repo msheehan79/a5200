@@ -40,7 +40,6 @@
 #define MACHINE_OSB   1
 #define MACHINE_XLXE  2
 #define MACHINE_5200  3
-extern int machine_type;
 
 /* RAM size in kilobytes.
    Valid values for MACHINE_OSA and MACHINE_OSB are: 16, 48, 52.
@@ -133,8 +132,7 @@ extern int sprite_collisions_in_skipped_frames;
 int Atari800_Initialise(void);
 
 /* Emulates one frame (1/50sec for PAL, 1/60sec for NTSC). */
-//void Atari800_Frame(void);
-void Atari800_Frame(unsigned int refresh_rate);
+void Atari800_Frame(void);
 
 /* Reboots the emulated Atari. */
 void Coldstart(void);

@@ -2323,8 +2323,7 @@ int cur_screen_pos = NOT_DRAWING;
 #endif
 
 /* This function emulates one frame drawing screen at atari_screen */
-void ANTIC_Frame(int draw_display) {
-//void ANTIC_Frame(void) {
+void ANTIC_Frame(void) {
 	static const UBYTE mode_type[32] = {
 		NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL0, NORMAL1, NORMAL1,
 		NORMAL2, NORMAL2, NORMAL1, NORMAL1, NORMAL1, NORMAL0, NORMAL0, NORMAL0,
@@ -2356,7 +2355,7 @@ void ANTIC_Frame(int draw_display) {
 
 	ypos = 0;
 	do {
-		POKEY_Scanline();		/* check and generate IRQ */
+		POKEY_Scanline(); /* check and generate IRQ */
 		OVERSCREEN_LINE;
 	} while (ypos < 8);
 
@@ -2371,16 +2370,7 @@ void ANTIC_Frame(int draw_display) {
 #endif
 	need_dl = TRUE;
 	do {
-/*
-		if ((mouse_mode == MOUSE_PEN || mouse_mode == MOUSE_GUN) && (ypos >> 1 == PENV_input)) {
-			PENH = PENH_input;
-			PENV = PENV_input;
-			if (GRACTL & 4)
-				TRIG_latch[mouse_port] = 0;
-		}
-*/
-
-	  POKEY_Scanline();		/* check and generate IRQ */
+		POKEY_Scanline(); /* check and generate IRQ */
 		pmg_dma();
 
 		need_load = FALSE;
@@ -2499,7 +2489,8 @@ void ANTIC_Frame(int draw_display) {
 
 #ifdef NEW_CYCLE_EXACT
 		/* begin drawing here */
-		if (draw_display) {
+		if (1)
+		{
 			cur_screen_pos = LBORDER_START;
 			xpos = antic2cpu_ptr[xpos]; /* convert antic to cpu(need for WSYNC) */
 			if (dctr == lastline) {
@@ -2529,28 +2520,6 @@ void ANTIC_Frame(int draw_display) {
 				}
 			}
 		}
-		if (!draw_display) {
-			xpos += DMAR;
-			if (anticmode < 2 || (DMACTL & 3) == 0) {
-				GOEOL;
-				if (no_jvb) {
-					dctr++;
-					dctr &= 0xf;
-				}
-				continue;
-			}
-			if (need_load) {
-				xpos += load_cycles[md];
-				if (anticmode <= 5)	// extra cycles in font modes 
-					xpos += before_cycles[md] - extra_cycles[md];
-			}
-			if (anticmode < 8)
-				xpos += font_cycles[md];
-			GOEOL;
-			dctr++;
-			dctr &= 0xf;
-			continue;
-		}
 #ifndef NO_YPOS_BREAK_FLICKER
 #define YPOS_BREAK_FLICKER if (ypos == break_ypos - 1000) {\
 				static int toggle;\
@@ -2571,11 +2540,7 @@ void ANTIC_Frame(int draw_display) {
 			UPDATE_DMACTL
 			cur_screen_pos = NOT_DRAWING;
 			YPOS_BREAK_FLICKER
-#ifdef ALEKSCR_DIRECT
       scrn_ptr += 256;
-#else
-      scrn_ptr += 256; //+= ATARI_WIDTH / 2;
-#endif
 			if (no_jvb) {
 				dctr++;
 				dctr &= 0xf;
@@ -2601,11 +2566,7 @@ void ANTIC_Frame(int draw_display) {
 			draw_antic_0_ptr();
 			GOEOL;
 			YPOS_BREAK_FLICKER
-#ifdef ALEKSCR_DIRECT
       scrn_ptr += 256;
-#else
-      scrn_ptr += 256; //+= ATARI_WIDTH / 2;
-#endif
 			if (no_jvb) {
 				dctr++;
 				dctr &= 0xf;
@@ -2730,11 +2691,7 @@ void ANTIC_Frame(int draw_display) {
 		GOEOL;
 #endif /* NEW_CYCLE_EXACT */
 		YPOS_BREAK_FLICKER
-#ifdef ALEKSCR_DIRECT
       scrn_ptr += 256;
-#else
-      scrn_ptr += 256; //+= ATARI_WIDTH / 2;
-#endif
 		dctr++;
 		dctr &= 0xf;
 	} while (ypos < (ATARI_HEIGHT + 8));

@@ -1746,9 +1746,8 @@ static void Device_RestoreHandler(UWORD address, UBYTE esc_code)
 {
 	Atari800_RemoveEsc(esc_code);
 	/* restore original OS code */
-	dCopyToMem(machine_type == MACHINE_XLXE
-	            ? atari_os + address - 0xc000
-	            : atari_os + address - 0xd800,
+	dCopyToMem(
+	           atari_os + address - 0xd800,
 	           address, 3);
 }
 
@@ -1995,55 +1994,7 @@ int enable_r_patch = FALSE;
 */
 int Device_PatchOS(void)
 {
-	UWORD addr;
-	int i;
-	int patched = FALSE;
-
-	switch (machine_type) {
-	case MACHINE_OSA:
-	case MACHINE_OSB:
-		addr = 0xf0e3;
-		break;
-	case MACHINE_XLXE:
-		addr = 0xc42e;
-		break;
-	default:
-		return FALSE;
-	}
-
-	for (i = 0; i < 5; i++) {
-		UWORD devtab = dGetWord(addr + 1);
-		switch (dGetByte(addr)) {
-		case 'E':
-			if (loading_basic) {
-				ehopen_addr = dGetWord(devtab + DEVICE_TABLE_OPEN) + 1;
-				ehclos_addr = dGetWord(devtab + DEVICE_TABLE_CLOS) + 1;
-				ehread_addr = dGetWord(devtab + DEVICE_TABLE_READ) + 1;
-				ehwrit_addr = dGetWord(devtab + DEVICE_TABLE_WRIT) + 1;
-				ready_ptr = ready_prompt;
-				Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
-				patched = TRUE;
-			}
-#ifdef BASIC
-			else
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
-				                   ESC_EHWRIT, Device_E_Write);
-			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
-			                   ESC_EHREAD, Device_E_Read);
-			patched = TRUE;
-			break;
-		case 'K':
-			Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_READ) + 1),
-			                   ESC_KHREAD, Device_K_Read);
-			patched = TRUE;
-			break;
-#endif
-		default:
-			break;
-		}
-		addr += 3;				/* Next Device in HATABS */
-	}
-	return patched;
+	return 0;
 }
 
 /* New handling of H: device.

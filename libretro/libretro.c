@@ -1397,7 +1397,7 @@ void retro_run(void)
       update_input();
 
    /* Run emulator */
-   Atari800_Frame(0);
+   Atari800_Frame();
 
    /* Output video */
    update_video();

@@ -97,16 +97,6 @@ void MemStateSave(UBYTE SaveVerbose)
 	SaveUBYTE(&memory[0], 65536);
 	SaveUBYTE(&attrib[0], 65536);
 
-	if (machine_type == MACHINE_XLXE) {
-		if (SaveVerbose != 0)
-			SaveUBYTE(&atari_basic[0], 8192);
-		SaveUBYTE(&under_atari_basic[0], 8192);
-
-		if (SaveVerbose != 0)
-			SaveUBYTE(&atari_os[0], 16384);
-		SaveUBYTE(&under_atarixl_os[0], 16384);
-	}
-
 	if (ram_size > 64) {
 		SaveUBYTE(&atarixe_memory[0], atarixe_memory_size);
 		/* a hack that makes state files compatible with previous versions:
@@ -125,16 +115,6 @@ void MemStateSave(UBYTE SaveVerbose)
 void MemStateRead(UBYTE SaveVerbose) {
 	ReadUBYTE(&memory[0], 65536);
 	ReadUBYTE(&attrib[0], 65536);
-
-	if (machine_type == MACHINE_XLXE) {
-		if (SaveVerbose != 0)
-			ReadUBYTE(&atari_basic[0], 8192);
-		ReadUBYTE(&under_atari_basic[0], 8192);
-
-		if (SaveVerbose != 0)
-			ReadUBYTE(&atari_os[0], 16384);
-		ReadUBYTE(&under_atarixl_os[0], 16384);
-	}
 
 	antic_xe_ptr = NULL;
 	AllocXEMemory();
@@ -369,22 +349,13 @@ void CartA0BF_Disable(void)
 	if (cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if ((machine_type != MACHINE_XLXE) || basic_disabled((UBYTE) (PORTB | PORTB_mask))) {
-			if (ram_size > 40) {
-				memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
-				SetRAM(0xa000, 0xbfff);
-			}
-			else
-				dFillMem(0xa000, 0xff, 0x2000);
+		if (ram_size > 40) {
+			memcpy(memory + 0xa000, under_cartA0BF, 0x2000);
+			SetRAM(0xa000, 0xbfff);
 		}
 		else
-			memcpy(memory + 0xa000, atari_basic, 0x2000);
+			dFillMem(0xa000, 0xff, 0x2000);
 		cartA0BF_enabled = FALSE;
-		if (machine_type == MACHINE_XLXE) {
-			TRIG[3] = 0;
-			if (GRACTL & 4)
-				TRIG_latch[3] = 0;
-		}
 	}
 }
 
@@ -393,36 +364,19 @@ void CartA0BF_Enable(void)
 	if (!cartA0BF_enabled) {
 		/* No BASIC if not XL/XE or bit 1 of PORTB set */
 		/* or accessing extended 576K or 1088K memory */
-		if (ram_size > 40 && ((machine_type != MACHINE_XLXE) || (PORTB & 0x02)
+		if (ram_size > 40 && ((MACHINE_5200 != MACHINE_XLXE) || (PORTB & 0x02)
 		|| ((PORTB & 0x10) == 0 && (ram_size == 576 || ram_size == 1088)))) {
 			/* Back-up 0xa000-0xbfff RAM */
 			memcpy(under_cartA0BF, memory + 0xa000, 0x2000);
 			SetROM(0xa000, 0xbfff);
 		}
 		cartA0BF_enabled = TRUE;
-		if (machine_type == MACHINE_XLXE)
-			TRIG[3] = 1;
 	}
 }
 
 void get_charset(UBYTE *cs)
 {
-	const UBYTE *p;
-	switch (machine_type) {
-	case MACHINE_OSA:
-	case MACHINE_OSB:
-		p = memory + 0xe000;
-		break;
-	case MACHINE_XLXE:
-		p = atari_os + 0x2000;
-		break;
-	case MACHINE_5200:
-		p = memory + 0xf800;
-		break;
-	default:
-		/* shouldn't happen */
-		return;
-	}
+	const UBYTE *p = memory + 0xf800;
 	/* copy font, but change screencode order to ATASCII order */
 	memcpy(cs, p + 0x200, 0x100); /* control chars */
 	memcpy(cs + 0x100, p, 0x200); /* !"#$..., uppercase letters */

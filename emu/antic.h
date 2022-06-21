@@ -47,8 +47,7 @@ extern UBYTE PENV_input;
 
 void ANTIC_Initialise(void);
 void ANTIC_Reset(void);
-void ANTIC_Frame(int draw_display);
-//void ANTIC_Frame(void);
+void ANTIC_Frame(void);
 UBYTE ANTIC_GetByte(UWORD addr);
 void ANTIC_PutByte(UWORD addr, UBYTE byte);
 

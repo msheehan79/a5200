@@ -119,7 +119,6 @@ void INPUT_Frame(void) {
 	   (this is simply not emulated).
 	   key_code is used for keypad keys and key_shift is used for 2nd button.
 	*/
-	//i = machine_type == MACHINE_5200 ? key_shift : (key_code == AKEY_BREAK);
   i = key_shift;
 	if (i && !last_key_break) {
 		if (IRQEN & 0x80) {
@@ -229,17 +228,7 @@ void INPUT_Frame(void) {
 			last_stick[i] = STICK[i];
 
 		TRIG_input[i] = Atari_TRIG(i);
-		//ALEK if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG_input[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
 	}
-
-/*
-	// handle analog joysticks in Atari 5200 
-	if (machine_type != MACHINE_5200) {
-		for (i = 0; i < 8; i++)
-			POT_input[i] = Atari_POT(i);
-	}
-	else {
-*/  
 
 	for (i = 0; i < 4; i++) {
 		if (atari_analog[i]) {
