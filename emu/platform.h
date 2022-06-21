@@ -7,7 +7,6 @@
 /* This include file defines prototypes for platform-specific functions. */
 
 void Atari_Initialise(void);
-int Atari_Exit(int run_monitor);
 int Atari_Keyboard(void);
 void Atari_DisplayScreen(void);
 

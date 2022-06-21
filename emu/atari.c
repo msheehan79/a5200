@@ -434,7 +434,7 @@ UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
 UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
 
 int Atari800_Exit(int run_monitor) {
-	int restart = Atari_Exit(run_monitor);
+	int restart = 0;
 #ifndef __PLUS
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */

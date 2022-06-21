@@ -50,17 +50,6 @@ void Atari_Initialise(void)
 }
 
 /* -------------------------------------------------------------------------- */
-/* ATARI EXIT                                                                 */
-/* -------------------------------------------------------------------------- */
-int Atari_Exit(int run_monitor)
-{
-#ifdef SOUND
-   Sound_Exit();
-#endif
-   return 0;
-}
-
-/* -------------------------------------------------------------------------- */
 unsigned int Atari_PORT(unsigned int num)
 {
    /* num is port index
