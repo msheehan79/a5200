@@ -211,17 +211,6 @@ FILE *Util_uniqopen(char *filename, const char *mode)
 int Util_unlink(const char *filename)
 {
 	WCHAR wfilename[FILENAME_MAX];
-#ifdef _WIN32_WCE
-	char cwd[FILENAME_MAX];
-	char fullfilename[FILENAME_MAX];
-	if (filename[0] != '\\' && filename[0] != '/') {
-		getcwd(cwd, FILENAME_MAX);
-		Util_catpath(fullfilename, cwd, filename);
-		if (MultiByteToWideChar(CP_ACP, 0, fullfilename, -1, wfilename, FILENAME_MAX) <= 0)
-			return -1;
-	}
-	else
-#endif
 	if (MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename, FILENAME_MAX) <= 0)
 		return -1;
 	return (DeleteFile(wfilename) != 0) ? 0 : -1;
