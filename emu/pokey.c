@@ -40,11 +40,6 @@
 #endif
 #include "antic.h"
 #include "cassette.h"
-//ALEK #include "log.h"
-
-#ifdef POKEY_UPDATE
-void pokey_update(void);
-#endif
 
 UBYTE KBCODE;
 UBYTE SERIN;
@@ -364,10 +359,6 @@ void POKEY_Frame(void) {
  ***************************************************************************/
 
 void POKEY_Scanline(void) {
-#ifdef POKEY_UPDATE
-	pokey_update();
-#endif
-
 #ifdef VOL_ONLY_SOUND
 	Update_vol_only_sound();
 #endif
