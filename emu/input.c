@@ -37,9 +37,7 @@
 #include "platform.h"
 #include "pokeysnd.h"
 #include "util.h"
-#ifndef CURSES_BASIC
 #include "screen.h" /* for atari_screen */
-#endif
 #ifdef __PLUS
 #include "input_win.h"
 #endif
@@ -232,7 +230,6 @@ void INPUT_Frame(void) {
 
 		TRIG_input[i] = Atari_TRIG(i);
 		//ALEK if ((joy_autofire[i] == AUTOFIRE_FIRE && !TRIG_input[i]) || (joy_autofire[i] == AUTOFIRE_CONT))
-		//ALEK 	TRIG_input[i] = (nframes & 2) ? 1 : 0;
 	}
 
 /*

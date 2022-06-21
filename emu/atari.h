@@ -4,22 +4,11 @@
 #include "config.h"
 #include <stdio.h> /* FILENAME_MAX */
 #include <stdint.h>
-#ifdef WIN32
-#include <windows.h>
+#ifdef _WIN32
+#include <windows.h> /* For ULONG/SLONG */
 #endif
 
 /* Fundamental declarations ---------------------------------------------- */
-
-//#define DIRTYRECT
-//#define NODIRTYCOMPARE
-
-//#define PAGED_MEM
-
-/* Note: Save states do not function correctly
- * when PAGED_ATTRIB is set */
-//#define PAGED_ATTRIB 1
-
-#define ATARI_TITLE  "Atari 800 Emulator, Version 2.0.2"
 
 #ifndef FALSE
 #define FALSE  0
@@ -83,16 +72,6 @@ extern int enable_sio_patch;
    You should never display anything outside the middle 336 columns. */
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
-
-/* Simply incremented by Atari800_Frame(). */
-extern unsigned int nframes;
-
-/* You can read it to see how fast is the emulator compared to real Atari
-   (100 if running at real Atari speed). */
-extern int percent_atari_speed;
-
-/* How often the screen is updated (1 = every Atari frame). */
-extern int refresh_rate;
 
 /* Set to TRUE for faster emulation with refresh_rate > 1.
    Set to FALSE for accurate emulation with refresh_rate > 1. */
@@ -170,29 +149,14 @@ int Atari800_InitialiseMachine(void);
 /* Reinitializes patches after enable_*_patch change. */
 void Atari800_UpdatePatches(void);
 
-/* Auto-detects file type and returns one of AFILE_* values. */
-int Atari800_DetectFileType(const uint8_t *data, size_t size);
-
 /* Auto-detects file type and mounts the file in the emulator.
    reboot: Coldstart() for disks, cartridges and tapes
    diskno: drive number for disks (1-8)
    readonly: mount disks as read-only */
 int Atari800_OpenFile(const uint8_t *data, size_t size, int reboot, int diskno, int readonly);
 
-/* Checks for "popular" filenames of ROM images in the specified directory
-   and sets atari_*_filename to the ones found.
-   If only_if_not_set is TRUE, then atari_*_filename is modified only when
-   Util_filenamenotset() is TRUE for it. */
-void Atari800_FindROMImages(const char *directory, int only_if_not_set);
-
-/* Load Atari800 text configuration file. */
-int Atari800_LoadConfig(const char *alternate_config_filename);
-
-/* Writes Atari800 text configuration file. */
-int Atari800_WriteConfig(void);
-
 /* Shuts down Atari800 emulation core. */
-int Atari800_Exit(int run_monitor);
+int Atari800_Exit(void);
 
 
 /* Private interface ----------------------------------------------------- */
@@ -310,17 +274,6 @@ enum ESCAPE {
 	ESC_PHSTAT = 0xb4,
 	ESC_PHSPEC = 0xb5,
 	ESC_PHINIT = 0xb6,
-
-#ifdef R_IO_DEVICE
-	/* R: device. */
-	ESC_ROPEN = 0xd0,
-	ESC_RCLOS = 0xd1,
-	ESC_RREAD = 0xd2,
-	ESC_RWRIT = 0xd3,
-	ESC_RSTAT = 0xd4,
-	ESC_RSPEC = 0xd5,
-	ESC_RINIT = 0xd6,
-#endif
 
 	/* H: device. */
 	ESC_HHOPEN = 0xc0,

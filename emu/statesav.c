@@ -40,8 +40,6 @@
 
 #define SAVE_VERSION_NUMBER 4
 
-extern void a5200_log(enum retro_log_level level, const char *format, ...);
-
 void AnticStateSave(void);
 void MainStateSave(void);
 void CpuStateSave(UBYTE SaveVerbose);
@@ -163,9 +161,7 @@ void SaveINT(const int *data, int num)
       UBYTE signbit = 0;
       unsigned int temp;
       UBYTE byte;
-      int temp0;
-
-      temp0 = *data++;
+      int temp0 = *data++;
       if (temp0 < 0)
       {
          temp0   = -temp0;
@@ -272,12 +268,7 @@ void ReadFNAME(char *filename)
 
    ReadUWORD(&namelen, 1);
    if (namelen >= PATH_MAX_LENGTH)
-   {
-      a5200_log(RETRO_LOG_ERROR,
-            "Save State: Filenames of %d characters not supported on this platform.\n",
-            (int)namelen);
       return;
-   }
 
    ReadUBYTE((UBYTE *)filename, namelen);
    filename[namelen] = 0;
@@ -297,25 +288,16 @@ int SaveAtariState(uint8_t *data, size_t size, UBYTE SaveVerbose)
    state_stream_error = false;
 
    if (!data || size < 1)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Invalid data.\n");
       goto error;
-   }
 
    /* Open memory stream */
    memstream_set_buffer(data, size);
    state_stream = memstream_open(1);
    if (!state_stream)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to open memory stream for writing.\n");
       goto error;
-   }
 
    if (memstream_write(state_stream, "ATARI5200", 9) != 9)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to write save state header.\n");
       goto error;
-   }
 
    SaveUBYTE(&StateVersion, 1);
    SaveUBYTE(&SaveVerbose, 1);
@@ -329,9 +311,6 @@ int SaveAtariState(uint8_t *data, size_t size, UBYTE SaveVerbose)
    GTIAStateSave();
    PIAStateSave();
    POKEYStateSave();
-#ifdef DREAMCAST
-   DCStateSave();
-#endif
 
    /* Close memory stream */
    memstream_close(state_stream);
@@ -339,10 +318,7 @@ int SaveAtariState(uint8_t *data, size_t size, UBYTE SaveVerbose)
    state_stream = NULL;
 
    if (state_stream_error)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to write save state data.\n");
       return FALSE;
-   }
 
    return TRUE;
 
@@ -374,36 +350,21 @@ int ReadAtariState(const uint8_t *data, size_t size)
    memstream_set_buffer((uint8_t*)data, size);
    state_stream = memstream_open(0);
    if (!state_stream)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to open memory stream for reading.\n");
       goto error;
-   }
 
    if (memstream_read(state_stream, header_string, 9) != 9)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to read save state header.\n");
       goto error;
-   }
 
    if (memcmp(header_string, "ATARI5200", 9) != 0)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: This is not a5200 save state data.\n");
       goto error;
-   }
 
    if ((memstream_read(state_stream, &StateVersion, 1) != 1) ||
        (memstream_read(state_stream, &SaveVerbose, 1)  != 1))
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to read save state data.\n");
       goto error;
-   }
 
    if ((StateVersion != SAVE_VERSION_NUMBER) &&
        (StateVersion != 3))
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Cannot read save state data - incompatible version detected.\n");
       goto error;
-   }
 
    MainStateRead();
    if (StateVersion != 3)
@@ -416,9 +377,6 @@ int ReadAtariState(const uint8_t *data, size_t size)
    GTIAStateRead();
    PIAStateRead();
    POKEYStateRead();
-#ifdef DREAMCAST
-   DCStateRead();
-#endif
 
    /* Close memory stream */
    memstream_close(state_stream);
@@ -426,10 +384,7 @@ int ReadAtariState(const uint8_t *data, size_t size)
    state_stream = NULL;
 
    if (state_stream_error)
-   {
-      a5200_log(RETRO_LOG_ERROR, "Save State: Failed to read save state data.\n");
       return FALSE;
-   }
 
    return TRUE;
 

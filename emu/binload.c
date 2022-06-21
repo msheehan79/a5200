@@ -48,7 +48,6 @@ static int BIN_read_word(void)
 		bin_file = NULL;
 		if (start_binloading) {
 			start_binloading = FALSE;
-			fprintf(stderr,"binload: not valid BIN file");
 			return -1;
 		}
 		regPC = dGetWordAligned(0x2e0);
@@ -148,13 +147,10 @@ int BIN_loader(const char *filename) {
 		bin_file = NULL;
 		loading_basic = 0;
 	}
-	if (machine_type == MACHINE_5200) {
-		fprintf(stderr,"binload: can't run Atari programs directly on the 5200");
+	if (machine_type == MACHINE_5200)
 		return FALSE;
-	}
 	bin_file = fopen(filename, "rb");
 	if (bin_file == NULL) {	/* open */
-		fprintf(stderr,"binload: can't open \"%s\"", filename);
 		return FALSE;
 	}
 	/* Avoid "BOOT ERROR" when loading a BASIC program */
@@ -181,6 +177,5 @@ int BIN_loader(const char *filename) {
 	}
 	fclose(bin_file);
 	bin_file = NULL;
-	fprintf(stderr,"binload: \"%s\" not recognized as a DOS or BASIC program", filename);
 	return FALSE;
 }

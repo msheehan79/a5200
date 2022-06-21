@@ -89,8 +89,7 @@ UBYTE RTIME8_GetByte(void)
 {
 	switch (rtime8_state) {
 	case 0:
-		/* iprintf("pretending rtime not busy, returning 0"); */
-		return 0;
+		break;
 	case 1:
 		rtime8_state = 2;
 		return (

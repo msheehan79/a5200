@@ -44,8 +44,9 @@ int Util_chrieq(char c1, char c2)
 	case 0x20:
 		return (c1 >= 'A' && c1 <= 'Z') || (c1 >= 'a' && c1 <= 'z');
 	default:
-		return FALSE;
+		break;
 	}
+	return FALSE;
 }
 
 char *Util_stpcpy(char *dest, const char *src)
@@ -53,13 +54,6 @@ char *Util_stpcpy(char *dest, const char *src)
 	size_t len = strlen(src);
 	memcpy(dest, src, len + 1);
 	return dest + len;
-}
-
-char *Util_strlcpy(char *dest, const char *src, size_t size)
-{
-	strncpy(dest, src, size);
-	dest[size - 1] = '\0';
-	return dest;
 }
 
 char *Util_strupper(char *s)
@@ -71,133 +65,14 @@ char *Util_strupper(char *s)
 	return s;
 }
 
-char *Util_strlower(char *s)
-{
-	char *p;
-	for (p = s; *p != '\0'; p++)
-		if (*p >= 'A' && *p <= 'Z')
-			*p += 'a' - 'A';
-	return s;
-}
-
-void Util_chomp(char *s)
-{
-	int len;
-
-	len = strlen(s);
-	if (len >= 2 && s[len - 1] == '\n' && s[len - 2] == '\r')
-		s[len - 2] = '\0';
-	else if (len >= 1 && (s[len - 1] == '\n' || s[len - 1] == '\r'))
-		s[len - 1] = '\0';
-}
-
-void Util_trim(char *s)
-{
-	char *p = s;
-	char *q;
-	/* skip leading whitespace */
-	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
-		p++;
-	/* now p points at the first non-whitespace character */
-
-	if (*p == '\0') {
-		/* only whitespace */
-		*s = '\0';
-		return;
-	}
-
-	q = s + strlen(s);
-	/* skip trailing whitespace */
-	/* we have found p < q such that *p is non-whitespace,
-	   so this loop terminates with q >= p */
-	do
-		q--;
-	while (*q == ' ' || *q == '\t' || *q == '\r' || *q == '\n');
-
-	/* now q points at the last non-whitespace character */
-	/* cut off trailing whitespace */
-	*++q = '\0';
-
-	/* move to string */
-	memmove(s, p, q + 1 - p);
-}
-
-int Util_sscandec(const char *s)
-{
-	int result;
-	if (*s == '\0')
-		return -1;
-	result = 0;
-	for (;;) {
-		if (*s >= '0' && *s <= '9')
-			result = 10 * result + *s - '0';
-		else if (*s == '\0')
-			return result;
-		else
-			return -1;
-		s++;
-	}
-}
-
-int Util_sscanhex(const char *s)
-{
-	int result;
-	if (*s == '\0')
-		return -1;
-	result = 0;
-	for (;;) {
-		if (*s >= '0' && *s <= '9')
-			result = 16 * result + *s - '0';
-		else if (*s >= 'A' && *s <= 'F')
-			result = 16 * result + *s - 'A' + 10;
-		else if (*s >= 'a' && *s <= 'f')
-			result = 16 * result + *s - 'a' + 10;
-		else if (*s == '\0')
-			return result;
-		else
-			return -1;
-		s++;
-	}
-}
-
-int Util_sscanbool(const char *s)
-{
-	if (*s == '0' && s[1] == '\0')
-		return 0;
-	if (*s == '1' && s[1] == '\0')
-		return 1;
-	return -1;
-}
-
 void *Util_malloc(size_t size)
 {
 	void *ptr = malloc(size);
 	if (ptr == NULL) {
-		Atari800_Exit(FALSE);
-		printf("Fatal error: out of memory\n");
+		Atari800_Exit();
 		exit(1);
 	}
   memset(ptr, 0, size);
-	return ptr;
-}
-
-void *Util_realloc(void *ptr, size_t size)
-{
-	ptr = realloc(ptr, size);
-	if (ptr == NULL) {
-		Atari800_Exit(FALSE);
-		printf("Fatal error: out of memory\n");
-		exit(1);
-	}
-	return ptr;
-}
-
-char *Util_strdup(const char *s)
-{
-	/* don't use strdup(): it is unavailable on WinCE */
-	size_t size = strlen(s) + 1;
-	char *ptr = (char *) Util_malloc(size);
-	memcpy(ptr, s, size); /* faster than strcpy(ptr, s) */
 	return ptr;
 }
 
@@ -246,10 +121,9 @@ void Util_catpath(char *result, const char *path1, const char *path2)
 			? "%s%s" : "%s" DIR_SEP_STR "%s", path1, path2);
 }
 
-int Util_fileexists(const char *filename)
+static int Util_fileexists(const char *filename)
 {
-	FILE *fp;
-	fp = fopen(filename, "rb");
+	FILE *fp = fopen(filename, "rb");
 	if (fp == NULL)
 		return FALSE;
 	fclose(fp);
@@ -257,7 +131,6 @@ int Util_fileexists(const char *filename)
 }
 
 #ifdef WIN32
-
 int Util_direxists(const char *filename)
 {
 	DWORD attr;
@@ -273,22 +146,17 @@ int Util_direxists(const char *filename)
 		return FALSE;
 	return (attr & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
 }
-
 #elif defined(HAVE_STAT)
-
 int Util_direxists(const char *filename)
 {
 	struct stat filestatus;
 	return stat(filename, &filestatus) == 0 && (filestatus.st_mode & S_IFDIR);
 }
-
 #else
-
 int Util_direxists(const char *filename)
 {
 	return TRUE;
 }
-
 #endif /* defined(HAVE_STAT) */
 
 
@@ -335,17 +203,6 @@ FILE *Util_uniqopen(char *filename, const char *mode)
 int Util_unlink(const char *filename)
 {
 	WCHAR wfilename[FILENAME_MAX];
-#ifdef _WIN32_WCE
-	char cwd[FILENAME_MAX];
-	char fullfilename[FILENAME_MAX];
-	if (filename[0] != '\\' && filename[0] != '/') {
-		getcwd(cwd, FILENAME_MAX);
-		Util_catpath(fullfilename, cwd, filename);
-		if (MultiByteToWideChar(CP_ACP, 0, fullfilename, -1, wfilename, FILENAME_MAX) <= 0)
-			return -1;
-	}
-	else
-#endif
 	if (MultiByteToWideChar(CP_ACP, 0, filename, -1, wfilename, FILENAME_MAX) <= 0)
 		return -1;
 	return (DeleteFile(wfilename) != 0) ? 0 : -1;

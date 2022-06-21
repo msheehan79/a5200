@@ -43,32 +43,7 @@
 #endif
 
 UBYTE memory[65536 + 2] __attribute__ ((aligned (4)));
-
-#ifndef PAGED_ATTRIB
-
 UBYTE attrib[65536];
-
-#else /* PAGED_ATTRIB */
-
-rdfunc readmap[256];
-wrfunc writemap[256];
-
-typedef struct map_save {
-	int     code;
-	rdfunc  rdptr;
-	wrfunc  wrptr;
-} map_save;
-
-void ROM_PutByte(UWORD addr, UBYTE value)
-{
-}
-
-map_save save_map[2] = {
-	{0, NULL, NULL},          /* RAM */
-	{1, NULL, ROM_PutByte}    /* ROM */
-};
-
-#endif /* PAGED_ATTRIB */
 
 static UBYTE under_atarixl_os[16384];
 static UBYTE under_atari_basic[8192];
@@ -103,106 +78,14 @@ static void AllocXEMemory(void)
 
 void MEMORY_InitialiseMachine(void) {
 	antic_xe_ptr = NULL;
-#if 0
-	switch (machine_type) {
-	case MACHINE_OSA:
-	case MACHINE_OSB:
-		memcpy(memory + 0xd800, atari_os, 0x2800);
-		Atari800_PatchOS();
-		dFillMem(0x0000, 0x00, ram_size * 1024 - 1);
-		SetRAM(0x0000, ram_size * 1024 - 1);
-		if (ram_size < 52) {
-			dFillMem(ram_size * 1024, 0xff, 0xd000 - ram_size * 1024);
-			SetROM(ram_size * 1024, 0xcfff);
-		}
-#ifndef PAGED_ATTRIB
-		SetHARDWARE(0xd000, 0xd7ff);
-#else
-		readmap[0xd0] = GTIA_GetByte;
-		readmap[0xd1] = PBI_GetByte;
-		readmap[0xd2] = POKEY_GetByte;
-		readmap[0xd3] = PIA_GetByte;
-		readmap[0xd4] = ANTIC_GetByte;
-		readmap[0xd5] = CART_GetByte;
-		readmap[0xd6] = PBIM1_GetByte;
-		readmap[0xd7] = PBIM2_GetByte;
-		writemap[0xd0] = GTIA_PutByte;
-		writemap[0xd1] = PBI_PutByte;
-		writemap[0xd2] = POKEY_PutByte;
-		writemap[0xd3] = PIA_PutByte;
-		writemap[0xd4] = ANTIC_PutByte;
-		writemap[0xd5] = CART_PutByte;
-		writemap[0xd6] = PBIM1_PutByte;
-		writemap[0xd7] = PBIM2_PutByte;
-#endif
-		SetROM(0xd800, 0xffff);
-		break;
-	case MACHINE_XLXE:
-		memcpy(memory + 0xc000, atari_os, 0x4000);
-		Atari800_PatchOS();
-		if (ram_size == 16) {
-			dFillMem(0x0000, 0x00, 0x4000);
-			SetRAM(0x0000, 0x3fff);
-			dFillMem(0x4000, 0xff, 0x8000);
-			SetROM(0x4000, 0xcfff);
-		} else {
-			dFillMem(0x0000, 0x00, 0xc000);
-			SetRAM(0x0000, 0xbfff);
-			SetROM(0xc000, 0xcfff);
-		}
-#ifndef PAGED_ATTRIB
-		SetHARDWARE(0xd000, 0xd7ff);
-#else
-		readmap[0xd0] = GTIA_GetByte;
-		readmap[0xd1] = PBI_GetByte;
-		readmap[0xd2] = POKEY_GetByte;
-		readmap[0xd3] = PIA_GetByte;
-		readmap[0xd4] = ANTIC_GetByte;
-		readmap[0xd5] = CART_GetByte;
-		readmap[0xd6] = PBIM1_GetByte;
-		readmap[0xd7] = PBIM2_GetByte;
-		writemap[0xd0] = GTIA_PutByte;
-		writemap[0xd1] = PBI_PutByte;
-		writemap[0xd2] = POKEY_PutByte;
-		writemap[0xd3] = PIA_PutByte;
-		writemap[0xd4] = ANTIC_PutByte;
-		writemap[0xd5] = CART_PutByte;
-		writemap[0xd6] = PBIM1_PutByte;
-		writemap[0xd7] = PBIM2_PutByte;
-#endif
-		SetROM(0xd800, 0xffff);
-		break;
-	case MACHINE_5200:
-#endif  
-		memcpy(memory + 0xf800, atari_os, 0x800);
-		dFillMem(0x0000, 0x00, 0xf800);
-		SetRAM(0x0000, 0x3fff);
-		SetROM(0x4000, 0xffff);
-#ifndef PAGED_ATTRIB
-		SetHARDWARE(0xc000, 0xc0ff);	/* 5200 GTIA Chip */
-		SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
-		SetHARDWARE(0xe800, 0xe8ff);	/* 5200 POKEY Chip */
-		SetHARDWARE(0xeb00, 0xebff);	/* 5200 POKEY Chip */
-#else
-		readmap[0xc0] = GTIA_GetByte;
-		readmap[0xd4] = ANTIC_GetByte;
-		readmap[0xe8] = POKEY_GetByte;
-		readmap[0xeb] = POKEY_GetByte;
-		writemap[0xc0] = GTIA_PutByte;
-		writemap[0xd4] = ANTIC_PutByte;
-		writemap[0xe8] = POKEY_PutByte;
-		writemap[0xeb] = POKEY_PutByte;
-    unsigned int i;
-		for ( i = 0xe9; i < 0xf0; i++ ) {
-			readmap[i] = POKEY_GetByte;
-			writemap[i] = POKEY_PutByte;
-		}
-
-#endif
-#if 0
-		break;
-	}
-#endif  
+	memcpy(memory + 0xf800, atari_os, 0x800);
+	dFillMem(0x0000, 0x00, 0xf800);
+	SetRAM(0x0000, 0x3fff);
+	SetROM(0x4000, 0xffff);
+	SetHARDWARE(0xc000, 0xc0ff);	/* 5200 GTIA Chip */
+	SetHARDWARE(0xd400, 0xd4ff);	/* 5200 ANTIC Chip */
+	SetHARDWARE(0xe800, 0xe8ff);	/* 5200 POKEY Chip */
+	SetHARDWARE(0xeb00, 0xebff);	/* 5200 POKEY Chip */
 	AllocXEMemory();
 	Coldstart();
 }
@@ -212,35 +95,7 @@ void MEMORY_InitialiseMachine(void) {
 void MemStateSave(UBYTE SaveVerbose)
 {
 	SaveUBYTE(&memory[0], 65536);
-#ifndef PAGED_ATTRIB
 	SaveUBYTE(&attrib[0], 65536);
-#else
-	{
-		/* I assume here that consecutive calls to SaveUBYTE()
-		   are equivalent to a single call with all the values
-		   (i.e. SaveUBYTE() doesn't write any headers). */
-		UBYTE attrib_page[256];
-		int i;
-		for (i = 0; i < 256; i++) {
-			if (writemap[i] == NULL)
-				memset(attrib_page, RAM, 256);
-			else if (writemap[i] == ROM_PutByte)
-				memset(attrib_page, ROM, 256);
-			else if (i == 0x4f || i == 0x5f || i == 0x8f || i == 0x9f) {
-				/* special case: Bounty Bob bank switching registers */
-				memset(attrib_page, ROM, 256);
-				attrib_page[0xf6] = HARDWARE;
-				attrib_page[0xf7] = HARDWARE;
-				attrib_page[0xf8] = HARDWARE;
-				attrib_page[0xf9] = HARDWARE;
-			}
-			else {
-				memset(attrib_page, HARDWARE, 256);
-			}
-			SaveUBYTE(&attrib_page[0], 256);
-		}
-	}
-#endif
 
 	if (machine_type == MACHINE_XLXE) {
 		if (SaveVerbose != 0)
@@ -269,86 +124,7 @@ void MemStateSave(UBYTE SaveVerbose)
 
 void MemStateRead(UBYTE SaveVerbose) {
 	ReadUBYTE(&memory[0], 65536);
-#ifndef PAGED_ATTRIB
 	ReadUBYTE(&attrib[0], 65536);
-#else
-	{
-		UBYTE attrib_page[256];
-		int i;
-		for (i = 0; i < 256; i++) {
-			ReadUBYTE(&attrib_page[0], 256);
-			/* note: 0x40 is intentional here:
-			   we want ROM on page 0xd1 if H: patches are enabled */
-			switch (attrib_page[0x40]) {
-			case RAM:
-				readmap[i] = NULL;
-				writemap[i] = NULL;
-				break;
-			case ROM:
-				if (i != 0xd1 && attrib_page[0xf6] == HARDWARE) {
-					if (i == 0x4f || i == 0x8f) {
-						readmap[i] = BountyBob1_GetByte;
-						writemap[i] = BountyBob1_PutByte;
-					}
-					else if (i == 0x5f || i == 0x9f) {
-						readmap[i] = BountyBob2_GetByte;
-						writemap[i] = BountyBob2_PutByte;
-					}
-					/* else something's wrong, so we keep current values */
-				}
-				else {
-					readmap[i] = NULL;
-					writemap[i] = ROM_PutByte;
-				}
-				break;
-			case HARDWARE:
-				switch (i) {
-				case 0xc0:
-				case 0xd0:
-					readmap[i] = GTIA_GetByte;
-					writemap[i] = GTIA_PutByte;
-					break;
-				case 0xd1:
-					readmap[i] = PBI_GetByte;
-					writemap[i] = PBI_PutByte;
-					break;
-				case 0xd2:
-				case 0xe8:
-				case 0xeb:
-					readmap[i] = POKEY_GetByte;
-					writemap[i] = POKEY_PutByte;
-				case 0xd3:
-					readmap[i] = PIA_GetByte;
-					writemap[i] = PIA_PutByte;
-					break;
-				case 0xd4:
-					readmap[i] = ANTIC_GetByte;
-					writemap[i] = ANTIC_PutByte;
-					break;
-				case 0xd5:
-					readmap[i] = CART_GetByte;
-					writemap[i] = CART_PutByte;
-					break;
-				case 0xd6:
-					readmap[i] = PBIM1_GetByte;
-					readmap[i] = PBIM2_GetByte;
-					break;
-				case 0xd7:
-					writemap[i] = PBIM1_PutByte;
-					writemap[i] = PBIM2_PutByte;
-					break;
-				default:
-					/* something's wrong, so we keep current values */
-					break;
-				}
-				break;
-			default:
-				/* something's wrong, so we keep current values */
-				break;
-			}
-		}
-	}
-#endif
 
 	if (machine_type == MACHINE_XLXE) {
 		if (SaveVerbose != 0)

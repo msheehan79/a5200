@@ -40,11 +40,6 @@
 #endif
 #include "antic.h"
 #include "cassette.h"
-//ALEK #include "log.h"
-
-#ifdef POKEY_UPDATE
-void pokey_update(void);
-#endif
 
 UBYTE KBCODE;
 UBYTE SERIN;
@@ -121,12 +116,6 @@ UBYTE POKEY_GetByte(UWORD addr)
 		break;
 	case _SERIN:
 		byte = SERIN;
-#ifdef DEBUG3
-		printf("SERIO: SERIN read, bytevalue %02x\n",SERIN);
-#endif
-#ifdef SERIO_SOUND
-		Update_serio_sound(0,byte);
-#endif
 		break;
 	case _IRQST:
 		byte = IRQST;
@@ -214,9 +203,6 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		break;
 	case _IRQEN:
 		IRQEN = byte;
-#ifdef DEBUG1
-		printf("WR: IRQEN = %x, PC = %x\n", IRQEN, PC);
-#endif
 		IRQST |= ~byte & 0xf7;	/* Reset disabled IRQs except XMTDONE */
 		if (IRQEN & 0x20) {
 			SLONG delay;
@@ -245,18 +231,12 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 		DELAYED_SEROUT_IRQ = SEROUT_INTERVAL;
 		IRQST |= 0x08;
 		DELAYED_XMTDONE_IRQ = XMTDONE_INTERVAL;
-#ifdef SERIO_SOUND
-		Update_serio_sound(1, byte);
-#endif
 		break;
 	case _STIMER:
 		DivNIRQ[CHAN1] = DivNMax[CHAN1];
 		DivNIRQ[CHAN2] = DivNMax[CHAN2];
 		DivNIRQ[CHAN4] = DivNMax[CHAN4];
 		Update_pokey_sound(_STIMER, byte, 0, SOUND_GAIN);
-#ifdef DEBUG1
-		printf("WR: STIMER = %x\n", byte);
-#endif
 		break;
 	case _SKCTLS:
 		SKCTLS = byte;
@@ -373,14 +353,6 @@ void POKEY_Frame(void) {
  ***************************************************************************/
 
 void POKEY_Scanline(void) {
-#ifdef POKEY_UPDATE
-	pokey_update();
-#endif
-
-#ifdef VOL_ONLY_SOUND
-	Update_vol_only_sound();
-#endif
-
 #ifndef BASIC
 	//ALEK INPUT_Scanline();	/* Handle Amiga and ST mice. */
 						/* It's not a part of POKEY emulation, */
@@ -406,40 +378,21 @@ void POKEY_Scanline(void) {
 				if (IRQST & 0x20) {
 					IRQST &= 0xdf;
 					SERIN = SIO_GetByte();
-#ifdef DEBUG2
-					printf("SERIO: SERIN Interrupt triggered, bytevalue %02x\n",SERIN);
-#endif
 				}
 				else {
 					SKSTAT &= 0xdf;
-#ifdef DEBUG2
-					printf("SERIO: SERIN Interrupt triggered\n");
-#endif
 				}
 				GenerateIRQ();
 			}
-#ifdef DEBUG2
-			else {
-				printf("SERIO: SERIN Interrupt missed\n");
-			}
-#endif
 		}
 	}
 
 	if (DELAYED_SEROUT_IRQ > 0) {
 		if (--DELAYED_SEROUT_IRQ == 0) {
 			if (IRQEN & 0x10) {
-#ifdef DEBUG2
-				printf("SERIO: SEROUT Interrupt triggered\n");
-#endif
 				IRQST &= 0xef;
 				GenerateIRQ();
 			}
-#ifdef DEBUG2
-			else {
-				printf("SERIO: SEROUT Interrupt missed\n");
-			}
-#endif
 		}
 	}
 
@@ -447,15 +400,8 @@ void POKEY_Scanline(void) {
 		if (--DELAYED_XMTDONE_IRQ == 0) {
 			IRQST &= 0xf7;
 			if (IRQEN & 0x08) {
-#ifdef DEBUG2
-				printf("SERIO: XMTDONE Interrupt triggered\n");
-#endif
 				GenerateIRQ();
 			}
-#ifdef DEBUG2
-			else
-				printf("SERIO: XMTDONE Interrupt missed\n");
-#endif
 		}
 
 	if ((DivNIRQ[CHAN1] -= LINE_C) < 0 ) {

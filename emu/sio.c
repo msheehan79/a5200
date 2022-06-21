@@ -398,7 +398,6 @@ static int FormatDisk(int unit, UBYTE *buffer, int sectsize, int sectcount)
 	SIO_Dismount(unit + 1);
 	f = fopen(fname, "wb");
 	if (f == NULL) {
-		fprintf(stderr,"FormatDisk: failed to open %s for writing", fname);
 		return 'E';
 	}
 	/* Write ATR header if necessary */
@@ -740,23 +739,12 @@ void SIO(void)
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length)
 {
-#if 0
-	/* old, less efficient version */
-	int i;
-	int checksum = 0;
-	for (i = 0; i < length; i++, buffer++) {
-		checksum += *buffer;
-		while (checksum > 255)
-			checksum -= 255;
-	}
-#else
 	int checksum = 0;
 	while (--length >= 0)
 		checksum += *buffer++;
 	do
 		checksum = (checksum & 0xff) + (checksum >> 8);
 	while (checksum > 255);
-#endif
 	return checksum;
 }
 
@@ -771,9 +759,6 @@ static UBYTE Command_Frame(void)
 
 	if (unit < 0 || unit >= MAX_DRIVES) {
 		/* Unknown device */
-		fprintf(stderr,"Unknown command frame: %02x %02x %02x %02x %02x",
-			   CommandFrame[0], CommandFrame[1], CommandFrame[2],
-			   CommandFrame[3], CommandFrame[4]);
 		TransferStatus = SIO_NoFrame;
 		return 0;
 	}
@@ -865,43 +850,12 @@ static UBYTE Command_Frame(void)
 /* Enable/disable the Tape Motor */
 void SIO_TapeMotor(int onoff)
 {
-#if 0
-	/* if sio is patched, do not do anything */
-	if (enable_sio_patch)
-		return;
-	if (onoff) {
-		/* set frame to cassette frame, if not */
-		/* in a transfer with an intelligent peripheral */
-		if (TransferStatus == SIO_NoFrame) {
-			TransferStatus = SIO_CasRead;
-			CASSETTE_TapeMotor(onoff);
-			DELAYED_SERIN_IRQ = CASSETTE_GetInputIRQDelay();
-		}
-		else {
-			CASSETTE_TapeMotor(onoff);
-		}
-	}
-	else {
-		/* set frame to none */
-		if (TransferStatus == SIO_CasRead) {
-			TransferStatus = SIO_NoFrame;
-			CASSETTE_TapeMotor(onoff);
-			DELAYED_SERIN_IRQ = 0; /* off */
-		}
-		else {
-			CASSETTE_TapeMotor(onoff);
-			DELAYED_SERIN_IRQ = 0; /* off */
-		}
-	}
-#endif
 }
 
 /* Enable/disable the command frame */
 void SwitchCommandFrame(int onoff)
 {
 	if (onoff) {				/* Enabled */
-		if (TransferStatus != SIO_NoFrame)
-			fprintf(stderr,"Unexpected command frame at state %x.", TransferStatus);
 		CommandIndex = 0;
 		DataIndex = 0;
 		ExpectedBytes = 5;
@@ -910,8 +864,6 @@ void SwitchCommandFrame(int onoff)
 	else {
 		if (TransferStatus != SIO_StatusRead && TransferStatus != SIO_NoFrame &&
 			TransferStatus != SIO_ReadFrame) {
-			if (!(TransferStatus == SIO_CommandFrame && CommandIndex == 0))
-				fprintf(stderr,"Command frame %02x unfinished.", TransferStatus);
 			TransferStatus = SIO_NoFrame;
 		}
 		CommandIndex = 0;
@@ -957,7 +909,6 @@ void SIO_PutByte(int byte)
 			}
 		}
 		else {
-			fprintf(stderr,"Invalid command frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -987,9 +938,6 @@ void SIO_PutByte(int byte)
 					TransferStatus = SIO_FinalStatus;
 				}
 			}
-		}
-		else {
-			fprintf(stderr,"Invalid data frame!");
 		}
 		break;
 	}
@@ -1022,7 +970,6 @@ int SIO_GetByte(void)
 			}
 		}
 		else {
-			fprintf(stderr,"Invalid read frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;
@@ -1040,7 +987,6 @@ int SIO_GetByte(void)
 			}
 		}
 		else {
-			fprintf(stderr,"Invalid read frame!");
 			TransferStatus = SIO_NoFrame;
 		}
 		break;

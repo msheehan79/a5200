@@ -2,11 +2,7 @@
 #define _CPU_H_
 
 #include "config.h"
-#ifdef ASAP /* external project, see http://asap.sf.net */
-#include "asap_internal.h"
-#else
 #include "atari.h"
-#endif
 
 #define N_FLAG 0x80
 #define V_FLAG 0x40
@@ -23,12 +19,6 @@ void CPU_Reset(void);
 void NMI(void);
 void GO(int limit);
 #define GenerateIRQ() (IRQ = 1)
-
-#ifdef FALCON_CPUASM
-extern void CPU_INIT(void);
-extern void CPUGET(void);		/* put from CCR, N & Z FLAG into regP */
-extern void CPUPUT(void);		/* put from regP into CCR, N & Z FLAG */
-#endif
 
 extern UWORD regPC;
 extern UBYTE regA;
@@ -66,11 +56,5 @@ extern int remember_xpos[REMEMBER_PC_STEPS];
 #define REMEMBER_JMP_STEPS 16
 extern UWORD remember_JMP[REMEMBER_JMP_STEPS];
 extern unsigned int remember_jmp_curpos;
-
-/* extern const int cycles[256]; */
-
-#ifdef MONITOR_PROFILE
-extern int instruction_count[256];
-#endif
 
 #endif /* _CPU_H_ */

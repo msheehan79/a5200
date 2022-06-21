@@ -23,7 +23,6 @@
 */
 
 #include "config.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,10 +32,6 @@
 #include "sio.h"
 
 UWORD *atari_screen = NULL;
-
-#ifdef DIRTYRECT
-UBYTE *screen_dirty = NULL;
-#endif
 
 void Screen_Initialise(unsigned char *buf)
 {

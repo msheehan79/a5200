@@ -23,11 +23,7 @@
 */
 #include "config.h"
 
-#ifdef ASAP /* external project, see http://asap.sf.net */
-#include "asap_internal.h"
-#else
 #include "atari.h"
-#endif
 #include "pokeysnd.h"
 
 #ifdef WORDS_UNALIGNED_OK
@@ -58,7 +54,7 @@ static uint8 Outbit[4 * MAXPOKEYS];		/* current state of the output (high or low
 
 static uint8 Outvol[4 * MAXPOKEYS];		/* last output volume for each channel */
 
-/* Initialze the bit patterns for the polynomials. */
+/* Initialize the bit patterns for the polynomials. */
 
 /* The 4bit and 5bit patterns are the identical ones used in the pokey chip. */
 /* Though the patterns could be packed with 8 bits per byte, using only a */
@@ -97,7 +93,6 @@ static uint16 last_val = 0;		/* last output value */
 #endif
 
 /* Volume only emulations declarations */
-#ifdef VOL_ONLY_SOUND
 
 #define	SAMPBUF_MAX	2000
 int	sampbuf_val[SAMPBUF_MAX];	/* volume values */
@@ -110,7 +105,6 @@ int	sampbuf_lastval = 0;		/* last volume */
 int	sampout;			/* last out volume */
 uint16 samp_freq;
 int	samp_consol_val = 0;		/* actual value of console sound */
-#endif  /* VOL_ONLY_SOUND */
 
 static uint32 snd_freq17 = FREQ_17_EXACT;
 int32 snd_playback_freq = 44100;
@@ -118,15 +112,8 @@ uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
 static int mz_quality = 0;		/* default quality for mzpokeysnd */
 
-# if 0 //LUDO:
-int enable_new_pokey = TRUE;
-#ifndef ASAP
-int stereo_enabled = FALSE;
-#endif
-# else
 int enable_new_pokey = FALSE;
 int stereo_enabled   = FALSE;
-# endif
 
 /* multiple sound engine interface */
 static void null_pokey_process(void *sndbuffer, unsigned int sndn) {}
@@ -136,26 +123,6 @@ static void Update_pokey_sound_rf(uint16, uint8, uint8, uint8);
 static void null_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain) {}
 void (*Update_pokey_sound) (uint16 addr, uint8 val, uint8 chip, uint8 gain)
   = null_pokey_sound;
-
-#ifdef SERIO_SOUND
-static void Update_serio_sound_rf(int out, UBYTE data);
-static void null_serio_sound(int out, UBYTE data) {}
-void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
-int serio_sound_enabled = 1;
-#endif
-
-#ifdef CONSOLE_SOUND
-static void Update_consol_sound_rf(int set);
-static void null_consol_sound(int set) {}
-void (*Update_consol_sound)(int set) = null_consol_sound;
-int console_sound_enabled = 1;
-#endif
-
-#ifdef VOL_ONLY_SOUND
-static void Update_vol_only_sound_rf(void);
-static void null_vol_only_sound(void) {}
-void (*Update_vol_only_sound)(void) = null_vol_only_sound;
-#endif
 
 /*****************************************************************************/
 /* In my routines, I treat the sample output as another divide by N counter  */
@@ -206,21 +173,8 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 	uint8 chan;
 
 	Update_pokey_sound = Update_pokey_sound_rf;
-#ifdef SERIO_SOUND
-	Update_serio_sound = Update_serio_sound_rf;
-#endif
-#ifdef CONSOLE_SOUND
-	Update_consol_sound = Update_consol_sound_rf;
-#endif
-#ifdef VOL_ONLY_SOUND
-	Update_vol_only_sound = Update_vol_only_sound_rf;
-#endif
 
-	//Pokey_process_ptr = (flags & SND_BIT16) ? Pokey_process_16 : Pokey_process_8;
-
-#ifdef VOL_ONLY_SOUND
 	samp_freq = playback_freq;
-#endif
 
 	/* start all of the polynomial counters at zero */
 	P4 = 0;
@@ -240,9 +194,7 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 		Div_n_cnt[chan] = 0;
 		Div_n_max[chan] = 0x7fffffffL;
 		AUDV[chan] = 0;
-#ifdef VOL_ONLY_SOUND
 		sampbuf_AUDV[chan] = 0;
-#endif
 	}
 
 	/* set the number of pokey chips currently emulated */
@@ -252,18 +204,8 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 }
 
 int Pokey_DoInit(void) {
-# if 0 //LUDO:
-	if (enable_new_pokey) {
-		return Pokey_sound_init_mz(snd_freq17, (uint16) snd_playback_freq,
-				snd_num_pokeys, snd_flags, mz_quality
-		);
-  }
-	else 
-# endif
-  {
-		return Pokey_sound_init_rf(snd_freq17, (uint16) snd_playback_freq,
-				snd_num_pokeys, snd_flags);
-  }
+	return Pokey_sound_init_rf(snd_freq17, (uint16) snd_playback_freq,
+	snd_num_pokeys, snd_flags);
 }
 
 int 
@@ -458,8 +400,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 	for (chan = CHAN1; chan <= CHAN4; chan++) {
 		if (chan_mask & (1 << chan)) {
 
-#ifdef VOL_ONLY_SOUND
-
 			if ((AUDC[chan + chip_offs] & VOL_ONLY)) {
  
 	  		{
@@ -482,7 +422,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 				}
 			}
 
-#endif /* VOL_ONLY_SOUND */
 
 			/* I've disabled any frequencies that exceed the sampling
 			   frequency.  There isn't much point in processing frequencies
@@ -772,7 +711,6 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 			iout = cur_val;
 #endif  /* INTERPOLATE_SOUND */
 
-#ifdef VOL_ONLY_SOUND
 			{
 				if (sampbuf_rptr != sampbuf_ptr) {
 					int l;
@@ -791,7 +729,6 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 				}
 				iout += sampout;
 			}
-#endif  /* VOL_ONLY_SOUND */
 
 #ifdef CLIP_SOUND
 			if (iout > SAMP_MAX) {	/* then check high limit */
@@ -813,104 +750,6 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 			n--;
 		}
 	}
-#ifdef VOL_ONLY_SOUND
-	{
-		if (sampbuf_rptr == sampbuf_ptr)
-			sampbuf_last = cpu_clock;
-	}
-#endif  /* VOL_ONLY_SOUND */
+	if (sampbuf_rptr == sampbuf_ptr)
+		sampbuf_last = cpu_clock;
 }
-
-#ifdef SERIO_SOUND
-static void Update_serio_sound_rf(int out, UBYTE data)
-{
-#ifdef VOL_ONLY_SOUND
-	int bits, pv, future;
-	if (!serio_sound_enabled) return;
-
-	pv = 0;
-	future = 0;
-	bits = (data << 1) | 0x200;
-	while (bits)
-	{
-		sampbuf_lastval -= pv;
-		pv = (bits & 0x01) * AUDV[3];	/* FIXME!!! - set volume from AUDV */
-		sampbuf_lastval += pv;
-
-	sampbuf_val[sampbuf_ptr] = sampbuf_lastval;
-	sampbuf_cnt[sampbuf_ptr] =
-		(cpu_clock + future-sampbuf_last) * 128 * samp_freq / 178979;
-	sampbuf_last = cpu_clock + future;
-	sampbuf_ptr++;
-	if (sampbuf_ptr >= SAMPBUF_MAX )
-		sampbuf_ptr = 0;
-	if (sampbuf_ptr == sampbuf_rptr ) {
-		sampbuf_rptr++;
-		if (sampbuf_rptr >= SAMPBUF_MAX)
-			sampbuf_rptr = 0;
-	}
-		/* 1789790/19200 = 93 */
-		future += 93;	/* ~ 19200 bit/s - FIXME!!! set speed form AUDF [2] ??? */
-		bits >>= 1;
-	}
-	sampbuf_lastval -= pv;
-#endif  /* VOL_ONLY_SOUND */
-}
-#endif /* SERIO_SOUND */
-
-#ifdef CONSOLE_SOUND
-static void Update_consol_sound_rf(int set)
-{
-#ifdef VOL_ONLY_SOUND
-	static int prev_atari_speaker = 0;
-	static unsigned int prev_cpu_clock = 0;
-	int d;
-	if (!console_sound_enabled)
-		return;
-
-	if (!set && samp_consol_val == 0)
-		return;
-	sampbuf_lastval -= samp_consol_val;
-	if (prev_atari_speaker != atari_speaker) {
-		samp_consol_val = atari_speaker * 8 * 4;	/* gain */
-		prev_cpu_clock = cpu_clock;
-	}
-	else if (!set) {
-		d = cpu_clock - prev_cpu_clock;
-		if (d < 114) {
-			sampbuf_lastval += samp_consol_val;
-			return;
-		}
-		while (d >= 114 /* CPUL */) {
-			samp_consol_val = samp_consol_val * 99 / 100;
-			d -= 114;
-		}
-		prev_cpu_clock = cpu_clock - d;
-	}
-	sampbuf_lastval += samp_consol_val;
-	prev_atari_speaker = atari_speaker;
-
-	sampbuf_val[sampbuf_ptr] = sampbuf_lastval;
-	sampbuf_cnt[sampbuf_ptr] =
-		(cpu_clock - sampbuf_last) * 128 * samp_freq / 178979;
-	sampbuf_last = cpu_clock;
-	sampbuf_ptr++;
-	if (sampbuf_ptr >= SAMPBUF_MAX)
-		sampbuf_ptr = 0;
-	if (sampbuf_ptr == sampbuf_rptr) {
-		sampbuf_rptr++;
-		if (sampbuf_rptr >= SAMPBUF_MAX)
-			sampbuf_rptr = 0;
-	}
-#endif  /* VOL_ONLY_SOUND */
-}
-#endif /* CONSOLE_SOUND */
-
-#ifdef VOL_ONLY_SOUND
-static void Update_vol_only_sound_rf(void)
-{
-#ifdef CONSOLE_SOUND
-	Update_consol_sound(0);	/* mmm */
-#endif /* CONSOLE_SOUND */
-}
-#endif  /* VOL_ONLY_SOUND */

@@ -67,9 +67,6 @@
 #include "pia.h" /* atari_os */
 #include "sio.h"
 #include "util.h"
-#ifdef R_IO_DEVICE
-#include "rdevice.h"
-#endif
 #ifdef __PLUS
 #include "misc_win.h"
 #endif
@@ -471,9 +468,6 @@ static UBYTE Device_RemoveDirectory(const char *filename)
 
 /* H: device emulation --------------------------------------------------- */
 
-/* emulator debugging mode */
-static int devbug = FALSE;
-
 /* host path for each H: unit */
 char atari_h_dir[4][FILENAME_MAX] = { "", "", "", "" };
 
@@ -736,11 +730,6 @@ static void Device_H_Open(void)
 
 	if (h_fp[h_iocb] != NULL)
 		Util_fclose(h_fp[h_iocb], h_tmpbuf[h_iocb]);
-
-#if 0
-	if (devbug)
-		iprintf("atari_filename=\"%s\", atari_path=\"%s\" host_path=\"%s\"", atari_filename, atari_path, host_path);
-#endif
 
 	fp = NULL;
 	h_wascr[h_iocb] = FALSE;
@@ -1271,7 +1260,6 @@ static int Device_H_BinReadWord(void)
 		binf = NULL;
 		if (start_binloading) {
 			start_binloading = FALSE;
-			fprintf(stderr,"binload: not valid BIN file");
 			regY = 180; /* MyDOS: not a binary file */
 			SetN;
 			return -1;
@@ -1355,7 +1343,6 @@ static void Device_H_BinLoaderCont(void)
 
 static void Device_H_LoadProceed(int mydos)
 {
-	/* iprintf("MyDOS %d, AX1 %d, AX2 %d", mydos, dGetByte(ICAX1Z), dGetByte(ICAX2Z)); */
 	if (mydos) {
 		switch (dGetByte(ICAX1Z) /* XXX: & 7 ? */) {
 		case 4:
@@ -1441,7 +1428,6 @@ static void Device_H_Load(int mydos)
 	if (fread(buf, 1, 2, binf) != 2 || buf[0] != 0xff || buf[1] != 0xff) {
 		fclose(binf);
 		binf = NULL;
-		fprintf(stderr,"H: load: not valid BIN file");
 		regY = 180;
 		SetN;
 		return;
@@ -1468,17 +1454,10 @@ static void Device_H_FileLength(void)
 	else {
 		int iocb = IOCB0 + h_iocb * 16;
 		int filesize;
-#if 0
-		/* old, less portable implementation */
-		struct stat fstatus;
-		fstat(fileno(h_fp[h_iocb]), &fstatus);
-		filesize = fstatus.st_size;
-#else
 		FILE *fp = h_fp[h_iocb];
 		long currentpos = ftell(fp);
 		filesize = Util_flen(fp);
 		fseek(fp, currentpos, SEEK_SET);
-#endif
 		dPutByte(iocb + ICAX3, (UBYTE) filesize);
 		dPutByte(iocb + ICAX4, (UBYTE) (filesize >> 8));
 		dPutByte(iocb + ICAX5, (UBYTE) (filesize >> 16));
@@ -1671,118 +1650,13 @@ static void Device_H_Special(void)
 	SetN;
 }
 
-
-/* P: device emulation --------------------------------------------------- */
-
-char print_command[256] = "lpr %s";
-
-int Device_SetPrintCommand(const char *command)
-{
-	const char *p = command;
-	int was_percent_s = FALSE;
-	while (*p != '\0') {
-		if (*p++ == '%') {
-			char c = *p++;
-			if (c == '%')
-				continue; /* %% is safe */
-			if (c == 's' && !was_percent_s) {
-				was_percent_s = TRUE; /* only one %s is safe */
-				continue;
-			}
-			return FALSE;
-		}
-	}
-	strcpy(print_command, command);
-	return TRUE;
-}
-
-#ifdef HAVE_SYSTEM
-
-static FILE *phf = NULL;
-static char spool_file[FILENAME_MAX];
-
-static void Device_P_Close(void)
-{
-	if (phf != NULL) {
-		fclose(phf);
-		phf = NULL;
-
-#ifdef __PLUS
-		if (!Misc_ExecutePrintCmd(spool_file))
-#endif
-		{
-			char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
-			sprintf(command, print_command, spool_file);
-			system(command);
-#if defined(HAVE_UTIL_UNLINK) && !defined(VMS) && !defined(MACOSX)
-			if (Util_unlink(spool_file) != 0) {
-				perror(spool_file);
-			}
-#endif
-		}
-	}
-	regY = 1;
-	ClrN;
-}
-
-static void Device_P_Open(void)
-{
-	if (phf != NULL)
-		Device_P_Close();
-
-	phf = Util_uniqopen(spool_file, "w");
-	if (phf != NULL) {
-		regY = 1;
-		ClrN;
-	}
-	else {
-		regY = 144; /* device done error */
-		SetN;
-	}
-}
-
-static void Device_P_Write(void)
-{
-	UBYTE byte;
-
-	byte = regA;
-	if (byte == 0x9b)
-		byte = '\n';
-
-	fputc(byte, phf);
-	regY = 1;
-	ClrN;
-}
-
-static void Device_P_Status(void)
-{
-}
-
-static void Device_P_Init(void)
-{
-	if (phf != NULL) {
-		fclose(phf);
-		phf = NULL;
-#ifdef HAVE_UTIL_UNLINK
-		Util_unlink(spool_file);
-#endif
-	}
-	regY = 1;
-	ClrN;
-}
-
-#endif /* HAVE_SYSTEM */
-
-
 /* K: and E: handlers for BASIC version, using getchar() and putchar() --- */
 
 #ifdef BASIC
 
 static void Device_E_Read(void)
 {
-	int ch;
-
-	ch = getchar();
+	int ch = getchar();
 	switch (ch) {
 	case EOF:
 		Atari800_Exit(FALSE);
@@ -1801,9 +1675,7 @@ static void Device_E_Read(void)
 
 static void Device_E_Write(void)
 {
-	UBYTE ch;
-
-	ch = regA;
+	UBYTE ch = regA;
 	/* XXX: are '\f', '\b' and '\a' fully portable? */
 	switch (ch) {
 	case 0x7d: /* Clear Screen */
@@ -1832,10 +1704,8 @@ static void Device_E_Write(void)
 
 static void Device_K_Read(void)
 {
-	int ch;
 	int ch2;
-
-	ch = getchar();
+	int ch = getchar();
 	switch (ch) {
 	case EOF:
 		Atari800_Exit(FALSE);
@@ -2144,31 +2014,6 @@ int Device_PatchOS(void)
 	for (i = 0; i < 5; i++) {
 		UWORD devtab = dGetWord(addr + 1);
 		switch (dGetByte(addr)) {
-#ifdef HAVE_SYSTEM
-		case 'P':
-			if (enable_p_patch) {
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_OPEN) + 1),
-				                   ESC_PHOPEN, Device_P_Open);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_CLOS) + 1),
-				                   ESC_PHCLOS, Device_P_Close);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
-				                   ESC_PHWRIT, Device_P_Write);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_STAT) + 1),
-				                   ESC_PHSTAT, Device_P_Status);
-				Atari800_AddEscRts2((UWORD) (devtab + DEVICE_TABLE_INIT), ESC_PHINIT,
-				                    Device_P_Init);
-				patched = TRUE;
-			}
-			else {
-				Atari800_RemoveEsc(ESC_PHOPEN);
-				Atari800_RemoveEsc(ESC_PHCLOS);
-				Atari800_RemoveEsc(ESC_PHWRIT);
-				Atari800_RemoveEsc(ESC_PHSTAT);
-				Atari800_RemoveEsc(ESC_PHINIT);
-			}
-			break;
-#endif
-
 		case 'E':
 			if (loading_basic) {
 				ehopen_addr = dGetWord(devtab + DEVICE_TABLE_OPEN) + 1;
@@ -2254,9 +2099,6 @@ void Device_RemoveHATABSEntry(char device, UWORD entry_address,
 }
 
 static UWORD h_entry_address = 0;
-#ifdef R_IO_DEVICE
-static UWORD r_entry_address = 0;
-#endif
 
 #define H_DEVICE_BEGIN  0xd140
 #define H_TABLE_ADDRESS 0xd140
@@ -2268,28 +2110,10 @@ static UWORD r_entry_address = 0;
 #define H_PATCH_SPEC    0xd15f
 #define H_DEVICE_END    0xd161
 
-#ifdef R_IO_DEVICE
-#define R_DEVICE_BEGIN  0xd180
-#define R_TABLE_ADDRESS 0xd180
-#define R_PATCH_OPEN    0xd1a0
-#define R_PATCH_CLOS    0xd1a3
-#define R_PATCH_READ    0xd1a6
-#define R_PATCH_WRIT    0xd1a9
-#define R_PATCH_STAT    0xd1ac
-#define R_PATCH_SPEC    0xd1af
-#define R_PATCH_INIT    0xd1b3
-#define R_DEVICE_END    0xd1b5
-#endif
-
 void Device_Frame(void)
 {
 	if (enable_h_patch)
 		h_entry_address = Device_UpdateHATABSEntry('H', h_entry_address, H_TABLE_ADDRESS);
-
-#ifdef R_IO_DEVICE
-	if (enable_r_patch)
-		r_entry_address = Device_UpdateHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
-#endif
 }
 
 /* this is called when enable_h_patch is toggled */
@@ -2328,42 +2152,4 @@ void Device_UpdatePatches(void)
 		/* fill memory area used for table and patches with 0xff */
 		dFillMem(H_DEVICE_BEGIN, 0xff, H_DEVICE_END - H_DEVICE_BEGIN + 1);
 	}
-
-#ifdef R_IO_DEVICE
-	if (enable_r_patch) {		/* enable R: device */
-		/* change memory attributes for the area, where we put
-		   the R: handler table and patches */
-		SetROM(R_DEVICE_BEGIN, R_DEVICE_END);
-		/* set handler table */
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_OPEN, R_PATCH_OPEN - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_CLOS, R_PATCH_CLOS - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_READ, R_PATCH_READ - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_WRIT, R_PATCH_WRIT - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_STAT, R_PATCH_STAT - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_SPEC, R_PATCH_SPEC - 1);
-		dPutWord(R_TABLE_ADDRESS + DEVICE_TABLE_INIT, R_PATCH_INIT - 1);
-		/* set patches */
-		Atari800_AddEscRts(R_PATCH_OPEN, ESC_ROPEN, Device_ROPEN);
-		Atari800_AddEscRts(R_PATCH_CLOS, ESC_RCLOS, Device_RCLOS);
-		Atari800_AddEscRts(R_PATCH_READ, ESC_RREAD, Device_RREAD);
-		Atari800_AddEscRts(R_PATCH_WRIT, ESC_RWRIT, Device_RWRIT);
-		Atari800_AddEscRts(R_PATCH_STAT, ESC_RSTAT, Device_RSTAT);
-		Atari800_AddEscRts(R_PATCH_SPEC, ESC_RSPEC, Device_RSPEC);
-		Atari800_AddEscRts(R_PATCH_INIT, ESC_RINIT, Device_RINIT);
-		/* R: in HATABS will be added next frame by Device_Frame */
-	}
-	else {						/* disable R: device */
-		/* remove R: entry from HATABS */
-		Device_RemoveHATABSEntry('R', r_entry_address, R_TABLE_ADDRESS);
-		/* remove patches */
-		Atari800_RemoveEsc(ESC_ROPEN);
-		Atari800_RemoveEsc(ESC_RCLOS);
-		Atari800_RemoveEsc(ESC_RREAD);
-		Atari800_RemoveEsc(ESC_RWRIT);
-		Atari800_RemoveEsc(ESC_RSTAT);
-		Atari800_RemoveEsc(ESC_RSPEC);
-		/* fill memory area used for table and patches with 0xff */
-		dFillMem(R_DEVICE_BEGIN, 0xff, R_DEVICE_END - R_DEVICE_BEGIN + 1);
-	}
-#endif /* defined(R_IO_DEVICE) */
 }

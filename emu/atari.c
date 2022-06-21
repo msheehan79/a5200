@@ -23,7 +23,7 @@
 */
 
 #include "config.h"
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_SIGNAL_H
@@ -76,15 +76,11 @@
 #include "rtime8.h"
 #include "sio.h"
 #include "util.h"
-#if !defined(BASIC) && !defined(CURSES_BASIC)
-//#include "colours.h"
+#if !defined(BASIC)
 #include "screen.h"
 #endif
 #ifndef BASIC
 #include "statesav.h"
-#ifndef __PLUS
-//#include "ui.h"
-#endif
 #endif /* BASIC */
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
@@ -92,10 +88,6 @@
 #endif
 
 #ifdef __PLUS
-#ifdef _WX_
-#include "export.h"
-#else /* _WX_ */
-#include "globals.h"
 #include "macros.h"
 #include "display_win.h"
 #include "misc_win.h"
@@ -103,31 +95,15 @@
 #include "timing.h"
 #include "FileService.h"
 #include "Helpers.h"
-#endif /* _WX_ */
 #endif /* __PLUS */
 
-#include "global.h"
-
-//JGDATARI_t ATARI;
-
 int machine_type = MACHINE_5200;
-//int ram_size = 64;
 int ram_size = 16;
 int tv_mode = TV_NTSC;
 int disable_basic = TRUE;
 int enable_sio_patch = TRUE;
 
-int verbose = FALSE;
-
-//unsigned int nframes = 0;
-//int refresh_rate = 1;
 int sprite_collisions_in_skipped_frames = FALSE;
-
-int percent_atari_speed = 100;
-#ifdef BENCHMARK
-static double benchmark_start_time;
-static double Atari_time(void);
-#endif
 
 //int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 
@@ -196,12 +172,11 @@ void Atari800_RunEsc(UBYTE esc_code)
 	ui();
 #else /* CRASH_MENU */
 	cim_encountered = 1;
-	fprintf(stderr,"Invalid ESC code %02x at address %04x", esc_code, regPC - 2);
 #ifndef __PLUS
-	if (!Atari800_Exit(TRUE))
+	if (!Atari800_Exit())
 		exit(0);
 #else /* __PLUS */
-	Atari800_Exit(TRUE);
+	Atari800_Exit();
 #endif /* __PLUS */
 #endif /* CRASH_MENU */
 }
@@ -317,7 +292,7 @@ int Atari800_InitialiseMachine(void) {
 	return TRUE;
 }
 
-int Atari800_DetectFileType(const uint8_t *data, size_t size) {
+static int Atari800_DetectFileType(const uint8_t *data, size_t size) {
 	UBYTE header[4];
 	if (data == NULL || size < 4)
 		return AFILE_ERROR;
@@ -410,15 +385,6 @@ int Atari800_OpenFile(const uint8_t *data, size_t size, int reboot, int diskno, 
 }
 
 int Atari800_Initialise(void) {
-/*JGD
-  memset(&ATARI, 0, sizeof(ATARI_t));
-
-  ATARI.atari_snd_enable    = 1;
-  ATARI.atari_render_mode   = ATARI_RENDER_FIT_WIDTH;
-  ATARI.atari_joyemulation  = 1;
-  ATARI.atari_autoload = TRUE;
-*/
-  
   Device_Initialise();
 	RTIME8_Initialise();
 	SIO_Initialise ();
@@ -447,32 +413,8 @@ UNALIGNED_STAT_DEF(memory_write_word_stat)
 UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
 UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
 
-int Atari800_Exit(int run_monitor) {
-	int restart;
-
-#ifdef STAT_UNALIGNED_WORDS
-	printf("(ptr&7) atari_screen  pm_scanline  _____ memory ______  memory (aligned addr)\n");
-	printf("          32-bit W      32-bit R   16-bit R   16-bit W   16-bit R   16-bit W\n");
-	{
-		unsigned int sums[6] = {0, 0, 0, 0, 0, 0};
-		int i;
-		for (i = 0; i < 8; i++) {
-			printf("%6d%12u%14u%11u%11u%11u%11u\n", i,
-				atari_screen_write_long_stat[i], pm_scanline_read_long_stat[i],
-				memory_read_word_stat[i], memory_write_word_stat[i],
-				memory_read_aligned_word_stat[i], memory_write_aligned_word_stat[i]);
-			sums[0] += atari_screen_write_long_stat[i];
-			sums[1] += pm_scanline_read_long_stat[i];
-			sums[2] += memory_read_word_stat[i];
-			sums[3] += memory_write_word_stat[i];
-			sums[4] += memory_read_aligned_word_stat[i];
-			sums[5] += memory_write_aligned_word_stat[i];
-		}
-		printf("total:%12u%14u%11u%11u%11u%11u\n",
-			sums[0], sums[1], sums[2], sums[3], sums[4], sums[5]);
-	}
-#endif /* STAT_UNALIGNED_WORDS */
-	restart = Atari_Exit(run_monitor);
+int Atari800_Exit(void) {
+	int restart = 0;
 #ifndef __PLUS
 	if (!restart) {
 		SIO_Exit();	/* umount disks, so temporary files are deleted */
@@ -588,20 +530,15 @@ void Atari800_Frame(unsigned int refresh_rate) {
 	INPUT_Frame();
 #endif
 	GTIA_Frame();
-#ifdef SOUND
-//ALEK	Sound_Update();
-#endif
 
 	if (++refresh_counter >= refresh_rate) {
 		refresh_counter = 0;
 		ANTIC_Frame(TRUE);
-		//INPUT_DrawMousePointer();
 	}
 	else {
 		ANTIC_Frame(FALSE);
 	}
   POKEY_Frame();
-	//nframes++;
 }
 
 #endif /* __PLUS */
@@ -739,17 +676,12 @@ void MainStateRead(void) {
 	default:
 		machine_type = MACHINE_XLXE;
 		ram_size = 64;
-		fprintf(stderr,"Warning: Bad machine type read in from state save, defaulting to 800 XL");
 		break;
 	}
 
 	ReadINT(&pil_on, 1);
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
-
-//	load_roms();
-	/* XXX: what about patches? */
 }
 
 #endif
-

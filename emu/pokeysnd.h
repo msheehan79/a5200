@@ -11,8 +11,7 @@
 /*                          big/little endian #defines, removed <dos.h>,     */
 /*                          conditional defines for TRUE/FALSE               */
 /* 01/19/98 - Ron Fries - Changed signed/unsigned sample support to a        */
-/*                        compile-time option.  Defaults to unsigned -       */
-/*                        define SIGNED_SAMPLES to create signed.            */
+/*                        compile-time option.    */
 /*                                                                           */
 /*****************************************************************************/
 /*                                                                           */
@@ -82,17 +81,9 @@
 extern "C" {
 #endif
 
-//#define SIGNED_SAMPLES  /* define for signed output */
-
-#ifdef  SIGNED_SAMPLES			/* if signed output selected */
-#define SAMP_MAX 127			/* then set signed 8-bit clipping ranges */
-#define SAMP_MIN -128
-#define SAMP_MID 0
-#else
 #define SAMP_MAX 255			/* else set unsigned 8-bit clip ranges */
 #define SAMP_MIN 0
 #define SAMP_MID 128
-#endif
 
 /* init flags */
 #define SND_BIT16	1
@@ -104,13 +95,10 @@ extern uint8 snd_num_pokeys;
 extern int enable_new_pokey;
 extern int stereo_enabled;
 extern int serio_sound_enabled;
-extern int console_sound_enabled;
 
 extern void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn);
 extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);
 extern void (*Update_serio_sound)(int out, UBYTE data);
-extern void (*Update_consol_sound)(int set);
-extern void (*Update_vol_only_sound)(void);
 
 int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
                      unsigned int flags
