@@ -23,7 +23,6 @@
 
 #include "altirra_5200_os.h"
 #include "atari.h"
-#include "global.h"
 #include "cartridge.h"
 #include "input.h"
 #include "pia.h"

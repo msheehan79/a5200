@@ -76,15 +76,11 @@
 #include "rtime8.h"
 #include "sio.h"
 #include "util.h"
-#if !defined(BASIC) && !defined(CURSES_BASIC)
-//#include "colours.h"
+#if !defined(BASIC)
 #include "screen.h"
 #endif
 #ifndef BASIC
 #include "statesav.h"
-#ifndef __PLUS
-//#include "ui.h"
-#endif
 #endif /* BASIC */
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
@@ -92,10 +88,6 @@
 #endif
 
 #ifdef __PLUS
-#ifdef _WX_
-#include "export.h"
-#else /* _WX_ */
-#include "globals.h"
 #include "macros.h"
 #include "display_win.h"
 #include "misc_win.h"
@@ -103,10 +95,7 @@
 #include "timing.h"
 #include "FileService.h"
 #include "Helpers.h"
-#endif /* _WX_ */
 #endif /* __PLUS */
-
-#include "global.h"
 
 int machine_type = MACHINE_5200;
 int ram_size = 16;
@@ -396,15 +385,6 @@ int Atari800_OpenFile(const uint8_t *data, size_t size, int reboot, int diskno, 
 }
 
 int Atari800_Initialise(void) {
-/*JGD
-  memset(&ATARI, 0, sizeof(ATARI_t));
-
-  ATARI.atari_snd_enable    = 1;
-  ATARI.atari_render_mode   = ATARI_RENDER_FIT_WIDTH;
-  ATARI.atari_joyemulation  = 1;
-  ATARI.atari_autoload = TRUE;
-*/
-  
   Device_Initialise();
 	RTIME8_Initialise();
 	SIO_Initialise ();

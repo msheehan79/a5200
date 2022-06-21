@@ -84,7 +84,7 @@ UBYTE consol_mask;
 UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
 
-#if defined(BASIC) || defined(CURSES_BASIC)
+#if defined(BASIC)
 
 static UBYTE PF0PM = 0;
 static UBYTE PF1PM = 0;
@@ -95,7 +95,7 @@ static UBYTE PF3PM = 0;
 #define collisions_mask_missile_player 0
 #define collisions_mask_player_player 0
 
-#else /* defined(BASIC) || defined(CURSES_BASIC) */
+#else /* defined(BASIC) */
 
 void set_prior(UBYTE byte);			/* in antic.c */
 
@@ -212,12 +212,12 @@ void setup_gtia9_11(void) {
 	}
 }
 
-#endif /* defined(BASIC) || defined(CURSES_BASIC) */
+#endif /* defined(BASIC) */
 
 /* Initialization ---------------------------------------------------------- */
 
 void GTIA_Initialise(void) {
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#if !defined(BASIC)
 	int i;
 	for (i = 0; i < 256; i++) {
 		int tmp = i + 0x100;
@@ -242,7 +242,7 @@ void GTIA_Initialise(void) {
 	memset(cl_lookup, COLOUR_BLACK, sizeof(cl_lookup));
 	for (i = 0; i < 32; i++)
 		GTIA_PutByte((UWORD) i, 0);
-#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+#endif /* !defined(BASIC) */
 }
 
 #ifdef NEW_CYCLE_EXACT
@@ -320,7 +320,7 @@ void update_pmpl_colls(void)
 
 /* Prepare PMG scanline ---------------------------------------------------- */
 
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#if !defined(BASIC)
 
 void new_pm_scanline(void)
 {
@@ -402,7 +402,7 @@ void new_pm_scanline(void)
 	}
 }
 
-#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+#endif /* !defined(BASIC) */
 
 /* GTIA registers ---------------------------------------------------------- */
 
@@ -532,7 +532,7 @@ UBYTE GTIA_GetByte(UWORD addr)
 
 void GTIA_PutByte(UWORD addr, UBYTE byte)
 {
-#if !defined(BASIC) && !defined(CURSES_BASIC)
+#if !defined(BASIC)
 	UWORD cword;
 	UWORD cword2;
 
@@ -550,7 +550,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #define UPDATE_PM_CYCLE_EXACT
 #endif
 
-#endif /* !defined(BASIC) && !defined(CURSES_BASIC) */
+#endif /* !defined(BASIC) */
 
 	switch (addr & 0x1f) {
 	case _CONSOL:
@@ -558,7 +558,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 		consol_mask = (~byte) & 0x0f;
 		break;
 
-#if defined(BASIC) || defined(CURSES_BASIC)
+#if defined(BASIC)
 
 	/* We use these for Antic modes 6, 7 on Curses */
 	case _COLPF0:
@@ -915,7 +915,7 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 			TRIG_latch[0] = TRIG_latch[1] = TRIG_latch[2] = TRIG_latch[3] = 1;
 		break;
 
-#endif /* defined(BASIC) || defined(CURSES_BASIC) */
+#endif /* defined(BASIC) */
 	}
 }
 
