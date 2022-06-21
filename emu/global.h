@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-//#include "gp2x_psp.h"
 #include <time.h>
 
 # ifndef CLK_TCK
@@ -20,7 +19,6 @@ extern "C" {
 # define ATARI_RENDER_FIT           2
 # define ATARI_RENDER_MAX           3
 
-//ALEK # define MAX_PATH   256
 # define ATARI_MAX_SAVE_STATE 5
 
 #ifdef __cplusplus

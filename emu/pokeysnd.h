@@ -11,8 +11,7 @@
 /*                          big/little endian #defines, removed <dos.h>,     */
 /*                          conditional defines for TRUE/FALSE               */
 /* 01/19/98 - Ron Fries - Changed signed/unsigned sample support to a        */
-/*                        compile-time option.  Defaults to unsigned -       */
-/*                        define SIGNED_SAMPLES to create signed.            */
+/*                        compile-time option.    */
 /*                                                                           */
 /*****************************************************************************/
 /*                                                                           */
@@ -82,17 +81,9 @@
 extern "C" {
 #endif
 
-//#define SIGNED_SAMPLES  /* define for signed output */
-
-#ifdef  SIGNED_SAMPLES			/* if signed output selected */
-#define SAMP_MAX 127			/* then set signed 8-bit clipping ranges */
-#define SAMP_MIN -128
-#define SAMP_MID 0
-#else
 #define SAMP_MAX 255			/* else set unsigned 8-bit clip ranges */
 #define SAMP_MIN 0
 #define SAMP_MID 128
-#endif
 
 /* init flags */
 #define SND_BIT16	1
