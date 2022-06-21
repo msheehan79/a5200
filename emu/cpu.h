@@ -2,11 +2,7 @@
 #define _CPU_H_
 
 #include "config.h"
-#ifdef ASAP /* external project, see http://asap.sf.net */
-#include "asap_internal.h"
-#else
 #include "atari.h"
-#endif
 
 #define N_FLAG 0x80
 #define V_FLAG 0x40

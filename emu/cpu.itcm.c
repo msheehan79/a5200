@@ -60,20 +60,14 @@
 #include <stdlib.h>	/* exit() */
 
 #include "cpu.h"
-#ifdef ASAP /* external project, see http://asap.sf.net */
-#include "asap_internal.h"
-#else
 #include "antic.h"
 #include "atari.h"
 #include "memory.h"
-//#include "monitor.h"
 #ifndef BASIC
 #include "statesav.h"
 #ifndef __PLUS
-//#include "ui.h"
 #endif
 #endif /* BASIC */
-#endif /* ASAP */
 
 /* Windows headers define it */
 #undef ABSOLUTE
@@ -2098,13 +2092,6 @@ void GO(int limit)
 		ABSOLUTE_X;
 		goto ins;
 
-#ifdef ASAP
-
-	OPCODE_ALIAS(d2)
-	OPCODE_ALIAS(f2)
-
-#else
-
 	OPCODE(d2)				/* ESCRTS #ab (CIM) - on Atari is here instruction CIM [unofficial] !RS! */
 		data = IMMEDIATE;
 		UPDATE_GLOBAL_REGS;
@@ -2130,8 +2117,6 @@ void GO(int limit)
 		UPDATE_LOCAL_REGS;
 		DONE
 
-#endif /* ASAP */
-
 	OPCODE_ALIAS(02)		/* CIM [unofficial - crash intermediate] */
 	OPCODE_ALIAS(12)
 	OPCODE_ALIAS(22)
@@ -2142,13 +2127,6 @@ void GO(int limit)
 	OPCODE_ALIAS(72)
 	OPCODE_ALIAS(92)
 	OPCODE(b2)
-
-#ifdef ASAP
-
-		ASAP_CIM();
-		DONE
-
-#else
 
 	/* OPCODE(d2) Used for ESCRTS #ab (CIM) */
 	/* OPCODE(f2) Used for ESC #ab (CIM) */
@@ -2169,8 +2147,6 @@ void GO(int limit)
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;
 		DONE
-
-#endif /* ASAP */
 
 /* ---------------------------------------------- */
 /* ADC and SBC routines */
@@ -2299,7 +2275,7 @@ void CPU_Reset(void)
 	regPC = dGetWordAligned(0xfffc);
 }
 
-#if !defined(BASIC) && !defined(ASAP)
+#if !defined(BASIC)
 
 void CpuStateSave(UBYTE SaveVerbose)
 {

@@ -23,11 +23,7 @@
 */
 #include "config.h"
 
-#ifdef ASAP /* external project, see http://asap.sf.net */
-#include "asap_internal.h"
-#else
 #include "atari.h"
-#endif
 #include "pokeysnd.h"
 
 #ifdef WORDS_UNALIGNED_OK
