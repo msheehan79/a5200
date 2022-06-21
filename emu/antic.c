@@ -2322,12 +2322,6 @@ static void ANTIC_load(void)
 int cur_screen_pos = NOT_DRAWING;
 #endif
 
-#ifdef USE_CURSES
-void curses_display_line(int anticmode, const UBYTE *screendata);
-
-static int scanlines_to_curses_display = 0;
-#endif
-
 /* This function emulates one frame drawing screen at atari_screen */
 void ANTIC_Frame(int draw_display) {
 //void ANTIC_Frame(void) {
@@ -2388,11 +2382,6 @@ void ANTIC_Frame(int draw_display) {
 
 	  POKEY_Scanline();		/* check and generate IRQ */
 		pmg_dma();
-
-#ifdef USE_CURSES
-		if (--scanlines_to_curses_display == 0)
-			curses_display_line(anticmode, ANTIC_memory + ANTIC_margin);
-#endif
 
 		need_load = FALSE;
 		if (need_dl) {
@@ -2626,15 +2615,6 @@ void ANTIC_Frame(int draw_display) {
 
 		if (need_load) {
 			ANTIC_load();
-#ifdef USE_CURSES
-			/* Normally, we would call curses_display_line here,
-			   and not use scanlines_to_curses_display at all.
-			   That would however cause incorrect color of the "MEMORY"
-			   menu item in Self Test - it isn't set properly
-			   in the first scanline. We therefore postpone
-			   curses_display_line call to the next scanline. */
-			scanlines_to_curses_display = 1;
-#endif
 			xpos += load_cycles[md];
 			if (anticmode <= 5)	/* extra cycles in font modes */
 				xpos -= extra_cycles[md];
@@ -3005,15 +2985,6 @@ void draw_partial_scanline(int l, int r)
 		/* now load ANTIC data: needed for ANTIC glitches */
 		if (need_load) {
 			ANTIC_load();
-#ifdef USE_CURSES
-			/* Normally, we would call curses_display_line here,
-			   and not use scanlines_to_curses_display at all.
-			   That would however cause incorrect color of the "MEMORY"
-			   menu item in Self Test - it isn't set properly
-			   in the first scanline. We therefore postpone
-			   curses_display_line call to the next scanline. */
-			scanlines_to_curses_display = 1;
-#endif
 			need_load = FALSE;
 		}
 
