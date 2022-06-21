@@ -1678,84 +1678,6 @@ int Device_SetPrintCommand(const char *command)
 	return TRUE;
 }
 
-#ifdef HAVE_SYSTEM
-
-static FILE *phf = NULL;
-static char spool_file[FILENAME_MAX];
-
-static void Device_P_Close(void)
-{
-	if (phf != NULL) {
-		fclose(phf);
-		phf = NULL;
-
-#ifdef __PLUS
-		if (!Misc_ExecutePrintCmd(spool_file))
-#endif
-		{
-			char command[256 + FILENAME_MAX]; /* 256 for print_command + FILENAME_MAX for spool_file */
-			sprintf(command, print_command, spool_file);
-			system(command);
-#if defined(HAVE_UTIL_UNLINK) && !defined(VMS) && !defined(MACOSX)
-			if (Util_unlink(spool_file) != 0) {
-				perror(spool_file);
-			}
-#endif
-		}
-	}
-	regY = 1;
-	ClrN;
-}
-
-static void Device_P_Open(void)
-{
-	if (phf != NULL)
-		Device_P_Close();
-
-	phf = Util_uniqopen(spool_file, "w");
-	if (phf != NULL) {
-		regY = 1;
-		ClrN;
-	}
-	else {
-		regY = 144; /* device done error */
-		SetN;
-	}
-}
-
-static void Device_P_Write(void)
-{
-	UBYTE byte;
-
-	byte = regA;
-	if (byte == 0x9b)
-		byte = '\n';
-
-	fputc(byte, phf);
-	regY = 1;
-	ClrN;
-}
-
-static void Device_P_Status(void)
-{
-}
-
-static void Device_P_Init(void)
-{
-	if (phf != NULL) {
-		fclose(phf);
-		phf = NULL;
-#ifdef HAVE_UTIL_UNLINK
-		Util_unlink(spool_file);
-#endif
-	}
-	regY = 1;
-	ClrN;
-}
-
-#endif /* HAVE_SYSTEM */
-
-
 /* K: and E: handlers for BASIC version, using getchar() and putchar() --- */
 
 #ifdef BASIC
@@ -2126,31 +2048,6 @@ int Device_PatchOS(void)
 	for (i = 0; i < 5; i++) {
 		UWORD devtab = dGetWord(addr + 1);
 		switch (dGetByte(addr)) {
-#ifdef HAVE_SYSTEM
-		case 'P':
-			if (enable_p_patch) {
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_OPEN) + 1),
-				                   ESC_PHOPEN, Device_P_Open);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_CLOS) + 1),
-				                   ESC_PHCLOS, Device_P_Close);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_WRIT) + 1),
-				                   ESC_PHWRIT, Device_P_Write);
-				Atari800_AddEscRts((UWORD) (dGetWord(devtab + DEVICE_TABLE_STAT) + 1),
-				                   ESC_PHSTAT, Device_P_Status);
-				Atari800_AddEscRts2((UWORD) (devtab + DEVICE_TABLE_INIT), ESC_PHINIT,
-				                    Device_P_Init);
-				patched = TRUE;
-			}
-			else {
-				Atari800_RemoveEsc(ESC_PHOPEN);
-				Atari800_RemoveEsc(ESC_PHCLOS);
-				Atari800_RemoveEsc(ESC_PHWRIT);
-				Atari800_RemoveEsc(ESC_PHSTAT);
-				Atari800_RemoveEsc(ESC_PHINIT);
-			}
-			break;
-#endif
-
 		case 'E':
 			if (loading_basic) {
 				ehopen_addr = dGetWord(devtab + DEVICE_TABLE_OPEN) + 1;
