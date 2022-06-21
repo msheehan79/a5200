@@ -149,26 +149,11 @@ int Atari800_InitialiseMachine(void);
 /* Reinitializes patches after enable_*_patch change. */
 void Atari800_UpdatePatches(void);
 
-/* Auto-detects file type and returns one of AFILE_* values. */
-int Atari800_DetectFileType(const uint8_t *data, size_t size);
-
 /* Auto-detects file type and mounts the file in the emulator.
    reboot: Coldstart() for disks, cartridges and tapes
    diskno: drive number for disks (1-8)
    readonly: mount disks as read-only */
 int Atari800_OpenFile(const uint8_t *data, size_t size, int reboot, int diskno, int readonly);
-
-/* Checks for "popular" filenames of ROM images in the specified directory
-   and sets atari_*_filename to the ones found.
-   If only_if_not_set is TRUE, then atari_*_filename is modified only when
-   Util_filenamenotset() is TRUE for it. */
-void Atari800_FindROMImages(const char *directory, int only_if_not_set);
-
-/* Load Atari800 text configuration file. */
-int Atari800_LoadConfig(const char *alternate_config_filename);
-
-/* Writes Atari800 text configuration file. */
-int Atari800_WriteConfig(void);
 
 /* Shuts down Atari800 emulation core. */
 int Atari800_Exit(void);
@@ -289,17 +274,6 @@ enum ESCAPE {
 	ESC_PHSTAT = 0xb4,
 	ESC_PHSPEC = 0xb5,
 	ESC_PHINIT = 0xb6,
-
-#ifdef R_IO_DEVICE
-	/* R: device. */
-	ESC_ROPEN = 0xd0,
-	ESC_RCLOS = 0xd1,
-	ESC_RREAD = 0xd2,
-	ESC_RWRIT = 0xd3,
-	ESC_RSTAT = 0xd4,
-	ESC_RSPEC = 0xd5,
-	ESC_RINIT = 0xd6,
-#endif
 
 	/* H: device. */
 	ESC_HHOPEN = 0xc0,

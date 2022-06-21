@@ -303,7 +303,7 @@ int Atari800_InitialiseMachine(void) {
 	return TRUE;
 }
 
-int Atari800_DetectFileType(const uint8_t *data, size_t size) {
+static int Atari800_DetectFileType(const uint8_t *data, size_t size) {
 	UBYTE header[4];
 	if (data == NULL || size < 4)
 		return AFILE_ERROR;
