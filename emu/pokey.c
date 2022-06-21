@@ -359,10 +359,6 @@ void POKEY_Frame(void) {
  ***************************************************************************/
 
 void POKEY_Scanline(void) {
-#ifdef VOL_ONLY_SOUND
-	Update_vol_only_sound();
-#endif
-
 #ifndef BASIC
 	//ALEK INPUT_Scanline();	/* Handle Amiga and ST mice. */
 						/* It's not a part of POKEY emulation, */

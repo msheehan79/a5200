@@ -93,7 +93,6 @@ static uint16 last_val = 0;		/* last output value */
 #endif
 
 /* Volume only emulations declarations */
-#ifdef VOL_ONLY_SOUND
 
 #define	SAMPBUF_MAX	2000
 int	sampbuf_val[SAMPBUF_MAX];	/* volume values */
@@ -106,7 +105,6 @@ int	sampbuf_lastval = 0;		/* last volume */
 int	sampout;			/* last out volume */
 uint16 samp_freq;
 int	samp_consol_val = 0;		/* actual value of console sound */
-#endif  /* VOL_ONLY_SOUND */
 
 static uint32 snd_freq17 = FREQ_17_EXACT;
 int32 snd_playback_freq = 44100;
@@ -131,12 +129,6 @@ static void Update_serio_sound_rf(int out, UBYTE data);
 static void null_serio_sound(int out, UBYTE data) {}
 void (*Update_serio_sound)(int out, UBYTE data) = null_serio_sound;
 int serio_sound_enabled = 1;
-#endif
-
-#ifdef VOL_ONLY_SOUND
-static void Update_vol_only_sound_rf(void);
-static void null_vol_only_sound(void) {}
-void (*Update_vol_only_sound)(void) = null_vol_only_sound;
 #endif
 
 /*****************************************************************************/
@@ -191,15 +183,8 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 #ifdef SERIO_SOUND
 	Update_serio_sound = Update_serio_sound_rf;
 #endif
-#ifdef VOL_ONLY_SOUND
-	Update_vol_only_sound = Update_vol_only_sound_rf;
-#endif
 
-	//Pokey_process_ptr = (flags & SND_BIT16) ? Pokey_process_16 : Pokey_process_8;
-
-#ifdef VOL_ONLY_SOUND
 	samp_freq = playback_freq;
-#endif
 
 	/* start all of the polynomial counters at zero */
 	P4 = 0;
@@ -219,9 +204,7 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 		Div_n_cnt[chan] = 0;
 		Div_n_max[chan] = 0x7fffffffL;
 		AUDV[chan] = 0;
-#ifdef VOL_ONLY_SOUND
 		sampbuf_AUDV[chan] = 0;
-#endif
 	}
 
 	/* set the number of pokey chips currently emulated */
@@ -427,8 +410,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 	for (chan = CHAN1; chan <= CHAN4; chan++) {
 		if (chan_mask & (1 << chan)) {
 
-#ifdef VOL_ONLY_SOUND
-
 			if ((AUDC[chan + chip_offs] & VOL_ONLY)) {
  
 	  		{
@@ -451,7 +432,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 				}
 			}
 
-#endif /* VOL_ONLY_SOUND */
 
 			/* I've disabled any frequencies that exceed the sampling
 			   frequency.  There isn't much point in processing frequencies
@@ -741,7 +721,6 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 			iout = cur_val;
 #endif  /* INTERPOLATE_SOUND */
 
-#ifdef VOL_ONLY_SOUND
 			{
 				if (sampbuf_rptr != sampbuf_ptr) {
 					int l;
@@ -760,7 +739,6 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 				}
 				iout += sampout;
 			}
-#endif  /* VOL_ONLY_SOUND */
 
 #ifdef CLIP_SOUND
 			if (iout > SAMP_MAX) {	/* then check high limit */
@@ -782,18 +760,13 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 			n--;
 		}
 	}
-#ifdef VOL_ONLY_SOUND
-	{
-		if (sampbuf_rptr == sampbuf_ptr)
-			sampbuf_last = cpu_clock;
-	}
-#endif  /* VOL_ONLY_SOUND */
+	if (sampbuf_rptr == sampbuf_ptr)
+		sampbuf_last = cpu_clock;
 }
 
 #ifdef SERIO_SOUND
 static void Update_serio_sound_rf(int out, UBYTE data)
 {
-#ifdef VOL_ONLY_SOUND
 	int bits, pv, future;
 	if (!serio_sound_enabled) return;
 
@@ -823,12 +796,5 @@ static void Update_serio_sound_rf(int out, UBYTE data)
 		bits >>= 1;
 	}
 	sampbuf_lastval -= pv;
-#endif  /* VOL_ONLY_SOUND */
 }
 #endif /* SERIO_SOUND */
-
-#ifdef VOL_ONLY_SOUND
-static void Update_vol_only_sound_rf(void)
-{
-}
-#endif  /* VOL_ONLY_SOUND */
