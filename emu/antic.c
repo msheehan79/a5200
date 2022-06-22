@@ -141,20 +141,6 @@ UBYTE ANTIC_memory[52];
 
 UWORD *scrn_ptr;
 
-/* Separate access to XE extended memory ----------------------------------- */
-/* It's available in 130 XE and 320 KB Compy Shop.
-   Note: during ANTIC access to extended memory in Compy Shop Self Test
-   is disabled. It is unknown if this is true for real 130 XE. If not,
-   then some extra code has to be added to:
-   - check if selftest_enabled is set
-   - check if the address is in range 0x5000..0x57ff
-   - if both conditions are true, then access memory instead of antic_xe_ptr */
-
-/* Pointer to 16 KB seen by ANTIC in 0x4000-0x7fff.
-   If it's the same what the CPU sees (and what's in memory[0x4000..0x7fff],
-   then NULL. */
-const UBYTE *antic_xe_ptr = NULL;
-
 /* ANTIC Timing --------------------------------------------------------------
 
 NOTE: this information was written before NEW_CYCLE_EXACT was introduced!
@@ -668,10 +654,7 @@ static void pmg_dma(void) {
 		if (player_gra_enabled) {
 			const UBYTE *base;
 			if (singleline) {
-				if (antic_xe_ptr != NULL && pmbase_s < 0x8000 && pmbase_s >= 0x4000)
-					base = antic_xe_ptr + pmbase_s - 0x4000 + ypos;
-				else
-					base = memory + pmbase_s + ypos;
+				base = memory + pmbase_s + ypos;
 				if (ypos & 1) {
 					GRAFP0 = base[0x400];
 					GRAFP1 = base[0x500];
@@ -690,10 +673,7 @@ static void pmg_dma(void) {
 				}
 			}
 			else {
-				if (antic_xe_ptr != NULL && pmbase_d < 0x8000 && pmbase_d >= 0x4000)
-					base = antic_xe_ptr + (pmbase_d - 0x4000) + (ypos >> 1);
-				else
-					base = memory + pmbase_d + (ypos >> 1);
+				base = memory + pmbase_d + (ypos >> 1);
 				if (ypos & 1) {
 					GRAFP0 = base[0x200];
 					GRAFP1 = base[0x280];
@@ -716,11 +696,7 @@ static void pmg_dma(void) {
 	}
 	if (missile_dma_enabled) {
 		if (missile_gra_enabled) {
-			UBYTE data;
-			if (antic_xe_ptr != NULL && pmbase_s < 0x8000 && pmbase_s >= 0x4000)
-				data = antic_xe_ptr[singleline ? pmbase_s + ypos + 0x300 - 0x4000 : pmbase_d + (ypos >> 1) + 0x180 - 0x4000];
-			else
-				data = dGetByte(singleline ? pmbase_s + ypos + 0x300 : pmbase_d + (ypos >> 1) + 0x180);
+			UBYTE data = dGetByte(singleline ? pmbase_s + ypos + 0x300 : pmbase_d + (ypos >> 1) + 0x180);
 			/* in odd lines load all missiles, in even only those, for which VDELAY bit is zero */
 			GRAFM = ypos & 1 ? data : ((GRAFM ^ data) & hold_missiles_tab[VDELAY & 0xf]) ^ data;
 		}
@@ -1126,10 +1102,7 @@ static void draw_an_gtia11(const ULONG *t_pm_scanline_ptr)
 #endif
 
 #define INIT_ANTIC_2	const UBYTE *chptr;\
-	if (antic_xe_ptr != NULL && chbase_20 < 0x8000 && chbase_20 >= 0x4000)\
-		chptr = antic_xe_ptr + ((dctr ^ chbase_20) & 0x3c07);\
-	else\
-		chptr = memory + ((dctr ^ chbase_20) & 0xfc07);\
+	chptr = memory + ((dctr ^ chbase_20) & 0xfc07);\
 	ADD_FONT_CYCLES;\
 	blank_lookup[0x60] = (anticmode == 2 || dctr & 0xe) ? 0xff : 0;\
 	blank_lookup[0x00] = blank_lookup[0x20] = blank_lookup[0x40] = (dctr & 0xe) == 8 ? 0 : 0xff;
@@ -1236,11 +1209,7 @@ static void draw_antic_2_artif(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 static void prepare_an_antic_2(int nchars, const UBYTE *ANTIC_memptr, const ULONG *t_pm_scanline_ptr)
 {
 	UBYTE *an_ptr = (UBYTE *) t_pm_scanline_ptr + (an_scanline - pm_scanline);
-	const UBYTE *chptr;
-	if (antic_xe_ptr != NULL && chbase_20 < 0x8000 && chbase_20 >= 0x4000)
-		chptr = antic_xe_ptr + ((dctr ^ chbase_20) & 0x3c07);
-	else
-		chptr = memory + ((dctr ^ chbase_20) & 0xfc07);
+	const UBYTE *chptr = memory + ((dctr ^ chbase_20) & 0xfc07);
 
 	CHAR_LOOP_BEGIN
 		UBYTE screendata = *ANTIC_memptr++;
@@ -1395,11 +1364,7 @@ static void draw_antic_2_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 static void draw_antic_4(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
 	INIT_BACKGROUND_8
-	const UBYTE *chptr;
-	if (antic_xe_ptr != NULL && chbase_20 < 0x8000 && chbase_20 >= 0x4000)
-		chptr = antic_xe_ptr + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0x3c07);
-	else
-		chptr = memory + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0xfc07);
+	const UBYTE *chptr = memory + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0xfc07);
 
 	ADD_FONT_CYCLES;
 	lookup2[0x0f] = lookup2[0x00] = cl_lookup[C_BAK];
@@ -1450,11 +1415,7 @@ static void draw_antic_4(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, cons
 static void prepare_an_antic_4(int nchars, const UBYTE *ANTIC_memptr, const ULONG *t_pm_scanline_ptr)
 {
 	UBYTE *an_ptr = (UBYTE *) t_pm_scanline_ptr + (an_scanline - pm_scanline);
-	const UBYTE *chptr;
-	if (antic_xe_ptr != NULL && chbase_20 < 0x8000 && chbase_20 >= 0x4000)
-		chptr = antic_xe_ptr + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0x3c07);
-	else
-		chptr = memory + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0xfc07);
+	const UBYTE *chptr = memory + (((anticmode == 4 ? dctr : dctr >> 1) ^ chbase_20) & 0xfc07);
 
 	ADD_FONT_CYCLES;
 	CHAR_LOOP_BEGIN
@@ -1477,11 +1438,7 @@ DEFINE_DRAW_AN(4)
 
 static void draw_antic_6(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
-	const UBYTE *chptr;
-	if (antic_xe_ptr != NULL && chbase_20 < 0x8000 && chbase_20 >= 0x4000)
-		chptr = antic_xe_ptr + (((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20) - 0x4000);
-	else
-		chptr = memory + ((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20);
+	const UBYTE *chptr = memory + ((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20);
 
 	ADD_FONT_CYCLES;
 	CHAR_LOOP_BEGIN
@@ -1549,11 +1506,7 @@ static void draw_antic_6(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, cons
 static void prepare_an_antic_6(int nchars, const UBYTE *ANTIC_memptr, const ULONG *t_pm_scanline_ptr)
 {
 	UBYTE *an_ptr = (UBYTE *) t_pm_scanline_ptr + (an_scanline - pm_scanline);
-	const UBYTE *chptr;
-	if (antic_xe_ptr != NULL && chbase_20 < 0x8000 && chbase_20 >= 0x4000)
-		chptr = antic_xe_ptr + (((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20) - 0x4000);
-	else
-		chptr = memory + ((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20);
+	const UBYTE *chptr = memory + ((anticmode == 6 ? dctr & 7 : dctr >> 1) ^ chbase_20);
 
 	ADD_FONT_CYCLES;
 	CHAR_LOOP_BEGIN
@@ -2235,11 +2188,7 @@ void ANTIC_UpdateArtifacting(void)
 UBYTE ANTIC_GetDLByte(UWORD *paddr)
 {
 	int addr = *paddr;
-	UBYTE result;
-	if (antic_xe_ptr != NULL && addr < 0x8000 && addr >= 0x4000)
-		result = antic_xe_ptr[addr - 0x4000];
-	else
-		result = GetByte((UWORD) addr);
+	UBYTE result = GetByte((UWORD) addr);
 	addr++;
 	if ((addr & 0x3FF) == 0)
 		addr -= 0x400;
@@ -2262,12 +2211,7 @@ static void ANTIC_load(void)
 	UWORD new_screenaddr = screenaddr + chars_read[md];
 	if ((screenaddr ^ new_screenaddr) & 0xf000) {
 		int bytes = (-screenaddr) & 0xfff;
-		if (antic_xe_ptr != NULL && screenaddr < 0x8000 && screenaddr >= 0x4000) {
-			memcpy(ANTIC_memory + ANTIC_margin, antic_xe_ptr + (screenaddr - 0x4000), bytes);
-			if (new_screenaddr & 0xfff)
-				memcpy(ANTIC_memory + ANTIC_margin + bytes, antic_xe_ptr + (screenaddr + bytes - 0x5000), new_screenaddr & 0xfff);
-		}
-		else if ((screenaddr & 0xf000) == 0xd000) {
+		if ((screenaddr & 0xf000) == 0xd000) {
 			CopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, bytes);
 			if (new_screenaddr & 0xfff)
 				CopyFromMem((UWORD) (screenaddr + bytes - 0x1000), ANTIC_memory + ANTIC_margin + bytes, new_screenaddr & 0xfff);
@@ -2280,9 +2224,7 @@ static void ANTIC_load(void)
 		screenaddr = new_screenaddr - 0x1000;
 	}
 	else {
-		if (antic_xe_ptr != NULL && screenaddr < 0x8000 && screenaddr >= 0x4000)
-			memcpy(ANTIC_memory + ANTIC_margin, antic_xe_ptr + (screenaddr - 0x4000), chars_read[md]);
-		else if ((screenaddr & 0xf000) == 0xd000)
+		if ((screenaddr & 0xf000) == 0xd000)
 			CopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, chars_read[md]);
 		else
 			dCopyFromMem(screenaddr, ANTIC_memory + ANTIC_margin, chars_read[md]);
