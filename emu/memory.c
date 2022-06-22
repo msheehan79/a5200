@@ -41,9 +41,7 @@
 
 UBYTE memory[65536 + 2] __attribute__ ((aligned (4)));
 UBYTE attrib[65536];
-
-static UBYTE under_atarixl_os[16384];
-static UBYTE under_atari_basic[8192];
+int cartA0BF_enabled = FALSE;
 
 void MEMORY_InitialiseMachine(void) {
 	memcpy(memory + 0xf800, atari_os, 0x800);
@@ -83,101 +81,4 @@ void CopyToMem(const UBYTE *from, UWORD to, int size)
 		from++;
 		to++;
 	}
-}
-
-/*
- * Returns non-zero, if Atari BASIC is disabled by given PORTB output.
- * Normally BASIC is disabled by setting bit 1, but it's also disabled
- * when using 576K and 1088K memory expansions, where bit 1 is used
- * for selecting extended memory bank number.
- */
-static int basic_disabled(UBYTE portb)
-{
-	return (portb & 0x02) != 0;
-}
-
-/* Note: this function is only for XL/XE! */
-void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval)
-{
-	/* Enable/disable OS ROM in 0xc000-0xcfff and 0xd800-0xffff */
-	if ((oldval ^ byte) & 0x01) {
-		if (byte & 0x01) {
-			memcpy(memory + 0xc000, atari_os, 0x1000);
-			memcpy(memory + 0xd800, atari_os + 0x1800, 0x2800);
-			Atari800_PatchOS();
-		}
-		else {
-			dFillMem(0xc000, 0xff, 0x1000);
-			dFillMem(0xd800, 0xff, 0x2800);
-			/* When OS ROM is disabled we also have to disable Self Test - Jindroush */
-			if (selftest_enabled) {
-				dFillMem(0x5000, 0xff, 0x800);
-				selftest_enabled = FALSE;
-			}
-		}
-	}
-
-	/* Enable/disable BASIC ROM in 0xa000-0xbfff */
-	if (!cartA0BF_enabled) {
-		/* BASIC is disabled if bit 1 set or accessing extended 576K or 1088K memory */
-		int now_disabled = basic_disabled(byte);
-		if (basic_disabled(oldval) != now_disabled) {
-			if (now_disabled)
-				dFillMem(0xa000, 0xff, 0x2000);
-			else
-				memcpy(memory + 0xa000, atari_basic, 0x2000);
-		}
-	}
-
-	/* Enable/disable Self Test ROM in 0x5000-0x57ff */
-	if (byte & 0x80) {
-		if (selftest_enabled) {
-			/* Disable Self Test ROM */
-			dFillMem(0x5000, 0xff, 0x800);
-			selftest_enabled = FALSE;
-		}
-	}
-}
-
-static int cart809F_enabled = FALSE;
-int cartA0BF_enabled = FALSE;
-static UBYTE under_cart809F[8192];
-static UBYTE under_cartA0BF[8192];
-
-void Cart809F_Disable(void)
-{
-	if (cart809F_enabled) {
-		dFillMem(0x8000, 0xff, 0x2000);
-		cart809F_enabled = FALSE;
-	}
-}
-
-void Cart809F_Enable(void)
-{
-	if (!cart809F_enabled) {
-		cart809F_enabled = TRUE;
-	}
-}
-
-void CartA0BF_Disable(void)
-{
-	if (cartA0BF_enabled) {
-		dFillMem(0xa000, 0xff, 0x2000);
-		cartA0BF_enabled = FALSE;
-	}
-}
-
-void CartA0BF_Enable(void)
-{
-	if (!cartA0BF_enabled)
-		cartA0BF_enabled = TRUE;
-}
-
-void get_charset(UBYTE *cs)
-{
-	const UBYTE *p = memory + 0xf800;
-	/* copy font, but change screencode order to ATASCII order */
-	memcpy(cs, p + 0x200, 0x100); /* control chars */
-	memcpy(cs + 0x100, p, 0x200); /* !"#$..., uppercase letters */
-	memcpy(cs + 0x300, p + 0x300, 0x100); /* lowercase letters */
 }

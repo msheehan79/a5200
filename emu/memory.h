@@ -55,12 +55,6 @@ void MemStateSave(UBYTE SaveVerbose);
 void MemStateRead(UBYTE SaveVerbose);
 void CopyFromMem(UWORD from, UBYTE *to, int size);
 void CopyToMem(const UBYTE *from, UWORD to, int size);
-void MEMORY_HandlePORTB(UBYTE byte, UBYTE oldval);
-void Cart809F_Disable(void);
-void Cart809F_Enable(void);
-void CartA0BF_Disable(void);
-void CartA0BF_Enable(void);
 #define CopyROM(addr1, addr2, src) memcpy(memory + (addr1), src, (addr2) - (addr1) + 1)
-void get_charset(UBYTE *cs);
 
 #endif /* _MEMORY_H_ */
