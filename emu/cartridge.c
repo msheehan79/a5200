@@ -38,9 +38,7 @@
 #include "pia.h"
 #include "rtime8.h"
 #include "util.h"
-#ifndef BASIC
 #include "statesav.h"
-#endif
 
 extern void a5200_log(enum retro_log_level level, const char *format, ...);
 
@@ -416,8 +414,6 @@ void CART_Start(void) {
 	}
 }
 
-#ifndef BASIC
-
 void CARTStateRead(void)
 {
 	/* Unused, but load the cart type for backwards
@@ -432,5 +428,3 @@ void CARTStateSave(void)
 	 * compatibility with old state files */
 	SaveINT(&cart_info.type, 1);
 }
-
-#endif

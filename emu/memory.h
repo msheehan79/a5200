@@ -6,7 +6,7 @@
 
 #include "atari.h"
 
-#define dGetByte(x)				(memory[x])
+#define dGetByte(x)			(memory[x])
 #define dPutByte(x, y)			(memory[x] = y)
 
 #ifndef WORDS_BIGENDIAN
@@ -48,7 +48,6 @@ extern UBYTE attrib[65536];
 #define SetROM(addr1, addr2) memset(attrib + (addr1), ROM, (addr2) - (addr1) + 1)
 #define SetHARDWARE(addr1, addr2) memset(attrib + (addr1), HARDWARE, (addr2) - (addr1) + 1)
 
-extern int have_basic;
 extern int cartA0BF_enabled;
 
 void MEMORY_InitialiseMachine(void);

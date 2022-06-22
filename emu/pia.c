@@ -29,11 +29,8 @@
 #include "memory.h"
 #include "pia.h"
 #include "sio.h"
-
-#ifndef BASIC
 #include "input.h"
 #include "statesav.h"
-#endif
 
 UBYTE PACTL;
 UBYTE PBCTL;
@@ -121,9 +118,6 @@ void PIA_PutByte(UWORD addr, UBYTE byte) {
 			/* set output register */
 			PORTA = byte;		/* change from thor */
 		}
-#ifndef BASIC
-		//ALEK INPUT_SelectMultiJoy((PORTA | PORTA_mask) >> 4);
-#endif
 		break;
 	case _PORTB:
 		{
@@ -139,8 +133,6 @@ void PIA_PutByte(UWORD addr, UBYTE byte) {
 		break;
 	}
 }
-
-#ifndef BASIC
 
 void PIAStateSave(void) {
 	int Ram256 = 0;
@@ -181,5 +173,3 @@ void PIAStateRead(void) {
 	ReadUBYTE( &PORTA_mask, 1 );
 	ReadUBYTE( &PORTB_mask, 1 );
 }
-
-#endif /* BASIC */

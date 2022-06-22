@@ -28,10 +28,8 @@
 #include "antic.h"
 #include "cassette.h"
 #include "gtia.h"
-#ifndef BASIC
 #include "input.h"
 #include "statesav.h"
-#endif
 #include "pokeysnd.h"
 
 /* GTIA Registers ---------------------------------------------------------- */
@@ -83,19 +81,6 @@ UBYTE consol_table[3];
 UBYTE consol_mask;
 UBYTE TRIG[4];
 UBYTE TRIG_latch[4];
-
-#if defined(BASIC)
-
-static UBYTE PF0PM = 0;
-static UBYTE PF1PM = 0;
-static UBYTE PF2PM = 0;
-static UBYTE PF3PM = 0;
-#define collisions_mask_missile_playfield 0
-#define collisions_mask_player_playfield 0
-#define collisions_mask_missile_player 0
-#define collisions_mask_player_player 0
-
-#else /* defined(BASIC) */
 
 void set_prior(UBYTE byte);			/* in antic.c */
 
@@ -212,12 +197,9 @@ void setup_gtia9_11(void) {
 	}
 }
 
-#endif /* defined(BASIC) */
-
 /* Initialization ---------------------------------------------------------- */
 
 void GTIA_Initialise(void) {
-#if !defined(BASIC)
 	int i;
 	for (i = 0; i < 256; i++) {
 		int tmp = i + 0x100;
@@ -242,7 +224,6 @@ void GTIA_Initialise(void) {
 	memset(cl_lookup, COLOUR_BLACK, sizeof(cl_lookup));
 	for (i = 0; i < 32; i++)
 		GTIA_PutByte((UWORD) i, 0);
-#endif /* !defined(BASIC) */
 }
 
 #ifdef NEW_CYCLE_EXACT
@@ -319,8 +300,6 @@ void update_pmpl_colls(void)
 #endif /* NEW_CYCLE_EXACT */
 
 /* Prepare PMG scanline ---------------------------------------------------- */
-
-#if !defined(BASIC)
 
 void new_pm_scanline(void)
 {
@@ -402,16 +381,10 @@ void new_pm_scanline(void)
 	}
 }
 
-#endif /* !defined(BASIC) */
-
 /* GTIA registers ---------------------------------------------------------- */
 
 void GTIA_Frame(void) {
-#ifdef BASIC
-	int consol = 0xf;
-#else
 	int consol = key_consol | 0x08;
-#endif
 
 	consol_table[0] = consol;
 	consol_table[1] = consol_table[2] &= consol;
@@ -532,7 +505,6 @@ UBYTE GTIA_GetByte(UWORD addr)
 
 void GTIA_PutByte(UWORD addr, UBYTE byte)
 {
-#if !defined(BASIC)
 	UWORD cword;
 	UWORD cword2;
 
@@ -550,31 +522,11 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 #define UPDATE_PM_CYCLE_EXACT
 #endif
 
-#endif /* !defined(BASIC) */
-
 	switch (addr & 0x1f) {
 	case _CONSOL:
 		atari_speaker = !(byte & 0x08);
 		consol_mask = (~byte) & 0x0f;
 		break;
-
-#if defined(BASIC)
-
-	/* We use these for Antic modes 6, 7 on Curses */
-	case _COLPF0:
-		COLPF0 = byte;
-		break;
-	case _COLPF1:
-		COLPF1 = byte;
-		break;
-	case _COLPF2:
-		COLPF2 = byte;
-		break;
-	case _COLPF3:
-		COLPF3 = byte;
-		break;
-
-#else
 
 	case _COLBK:
 		COLBK = byte &= 0xfe;
@@ -915,13 +867,10 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 			TRIG_latch[0] = TRIG_latch[1] = TRIG_latch[2] = TRIG_latch[3] = 1;
 		break;
 
-#endif /* defined(BASIC) */
 	}
 }
 
 /* State ------------------------------------------------------------------- */
-
-#ifndef BASIC
 
 void GTIAStateSave(void)
 {
@@ -1056,5 +1005,3 @@ void GTIAStateRead(void)
 	GTIA_PutByte(_PRIOR, PRIOR);
 	GTIA_PutByte(_GRACTL, GRACTL);
 }
-
-#endif /* BASIC */

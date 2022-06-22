@@ -38,9 +38,7 @@
 #include "pokeysnd.h"
 #include "sio.h"
 #include "util.h"
-#ifndef BASIC
 #include "statesav.h"
-#endif
 
 /* If ATR image is in double density (256 bytes per sector),
    then the boot sectors (sectors 1-3) can be:
@@ -998,7 +996,7 @@ int SIO_GetByte(void)
 	return byte;
 }
 
-#if !defined(BASIC) && !defined(__PLUS)
+#if !defined(__PLUS)
 int Rotate_Disks(void)
 {
 	char tmp_filenames[MAX_DRIVES][FILENAME_MAX];
@@ -1029,9 +1027,7 @@ int Rotate_Disks(void)
 
 	return bSuccess;
 }
-#endif /* !defined(BASIC) && !defined(__PLUS) */
-
-#ifndef BASIC
+#endif /* !defined(__PLUS) */
 
 void SIOStateSave(void)
 {
@@ -1072,5 +1068,3 @@ void SIOStateRead(void)
 		}
 	}
 }
-
-#endif /* BASIC */

@@ -37,9 +37,7 @@
 #include "pia.h"
 #include "pokeysnd.h"
 #include "util.h"
-#ifndef BASIC
 #include "statesav.h"
-#endif
 
 UBYTE memory[65536 + 2] __attribute__ ((aligned (4)));
 UBYTE attrib[65536];
@@ -48,8 +46,6 @@ static UBYTE under_atarixl_os[16384];
 static UBYTE under_atari_basic[8192];
 static UBYTE *atarixe_memory = NULL;
 static ULONG atarixe_memory_size = 0;
-
-int have_basic = FALSE; /* Atari BASIC image has been successfully read (Atari 800 only) */
 
 extern const UBYTE *antic_xe_ptr;	/* Separate ANTIC access to extended memory */
 
@@ -88,8 +84,6 @@ void MEMORY_InitialiseMachine(void) {
 	AllocXEMemory();
 	Coldstart();
 }
-
-#ifndef BASIC
 
 void MemStateSave(UBYTE SaveVerbose)
 {
@@ -130,8 +124,6 @@ void MemStateRead(UBYTE SaveVerbose) {
 	}
 
 }
-
-#endif /* BASIC */
 
 void CopyFromMem(UWORD from, UBYTE *to, int size)
 {

@@ -58,11 +58,9 @@
 #include "antic.h"
 #include "atari.h"
 #include "memory.h"
-#ifndef BASIC
 #include "statesav.h"
 #ifndef __PLUS
 #endif
-#endif /* BASIC */
 
 /* Windows headers define it */
 #undef ABSOLUTE
@@ -2006,8 +2004,6 @@ void CPU_Reset(void)
 	regPC = dGetWordAligned(0xfffc);
 }
 
-#if !defined(BASIC)
-
 void CpuStateSave(UBYTE SaveVerbose)
 {
 	SaveUBYTE(&regA, 1);
@@ -2041,5 +2037,3 @@ void CpuStateRead(UBYTE SaveVerbose)
 
 	ReadUWORD(&regPC, 1);
 }
-
-#endif

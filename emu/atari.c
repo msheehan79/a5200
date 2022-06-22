@@ -76,12 +76,8 @@
 #include "rtime8.h"
 #include "sio.h"
 #include "util.h"
-#if !defined(BASIC)
 #include "screen.h"
-#endif
-#ifndef BASIC
 #include "statesav.h"
-#endif /* BASIC */
 #if defined(SOUND) && !defined(__PLUS)
 #include "pokeysnd.h"
 #include "sound.h"
@@ -448,17 +444,13 @@ void Atari800_UpdatePatches(void) {
 
 void Atari800_Frame(void)
 {
-#ifndef BASIC
 	INPUT_Frame();
-#endif
 	GTIA_Frame();
 	ANTIC_Frame();
 	POKEY_Frame();
 }
 
 #endif /* __PLUS */
-
-#ifndef BASIC
 
 void MainStateSave(void) {
 	UBYTE temp;
@@ -507,5 +499,3 @@ void MainStateRead(void) {
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
 }
-
-#endif

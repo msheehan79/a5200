@@ -37,13 +37,9 @@
 #include "memory.h"
 #include "pokeysnd.h"
 #include "util.h"
-#if !defined(BASIC)
 #include "input.h"
 #include "screen.h"
-#endif
-#ifndef BASIC
 #include "statesav.h"
-#endif
 #ifdef NEW_CYCLE_EXACT
 #include "cycle_map.h"
 #endif
@@ -352,8 +348,6 @@ static UBYTE PENV;
 UBYTE PENH_input = 0x00;
 UBYTE PENV_input = 0xff;
 
-#ifndef BASIC
-
 /* Internal ANTIC registers ------------------------------------------------ */
 
 static UWORD screenaddr;		/* Screen Pointer */
@@ -363,10 +357,6 @@ static UBYTE dctr;				/* Delta Counter */
 static UBYTE lastline;			/* dctr limit */
 static UBYTE need_dl;			/* boolean: fetch DL next line */
 static UBYTE vscrol_off;		/* boolean: displaying line ending VSC */
-
-#endif
-
-#if !defined(BASIC)
 
 /* Pre-computed values for improved performance ---------------------------- */
 
@@ -800,12 +790,9 @@ static void setup_art_colours(void)
 	}
 }
 
-#endif /* !defined(BASIC) */
-
 /* Initialization ---------------------------------------------------------- */
 
 void ANTIC_Initialise(void) {
-#if !defined(BASIC)
 	ANTIC_UpdateArtifacting();
 
 	playfield_lookup[0x00] = L_BAK;
@@ -829,8 +816,6 @@ void ANTIC_Initialise(void) {
 	cpu2antic_ptr = &cpu2antic[0];
 	antic2cpu_ptr = &antic2cpu[0];
 #endif /* NEW_CYCLE_EXACT */
-
-#endif /* !defined(BASIC) */
 }
 
 void ANTIC_Reset(void) {
@@ -838,8 +823,6 @@ void ANTIC_Reset(void) {
 	NMIST = 0x1f;
 	ANTIC_PutByte(_DMACTL, 0);
 }
-
-#if !defined(BASIC)
 
 /* Border ------------------------------------------------------------------ */
 
@@ -2252,8 +2235,6 @@ void ANTIC_UpdateArtifacting(void)
 	}
 }
 
-#endif /* !defined(BASIC) */
-
 /* Display List ------------------------------------------------------------ */
 
 UBYTE ANTIC_GetDLByte(UWORD *paddr)
@@ -2274,14 +2255,10 @@ UBYTE ANTIC_GetDLByte(UWORD *paddr)
 UWORD ANTIC_GetDLWord(UWORD *paddr)
 {
 	UBYTE lsb = ANTIC_GetDLByte(paddr);
-#if !defined(BASIC)
 	if (player_flickering && ((VDELAY & 0x80) == 0 || ypos & 1))
 		GRAFP3 = lsb;
-#endif
 	return (ANTIC_GetDLByte(paddr) << 8) + lsb;
 }
-
-#if !defined(BASIC)
 
 /* Real ANTIC doesn't fetch beginning bytes in HSC
    nor screen+47 in wide playfield. This function does. */
@@ -3011,8 +2988,6 @@ void draw_partial_scanline(int l, int r)
 }
 #endif /* NEW_CYCLE_EXACT */
 
-#endif /* !defined(BASIC) */
-
 /* ANTIC registers --------------------------------------------------------- */
 
 UBYTE ANTIC_GetByte(UWORD addr)
@@ -3034,8 +3009,6 @@ UBYTE ANTIC_GetByte(UWORD addr)
 		return 0xff;
 	}
 }
-
-#if !defined(BASIC)
 
 /* GTIA calls it on write to PRIOR */
 void set_prior(UBYTE byte)
@@ -3121,8 +3094,6 @@ void set_prior(UBYTE byte)
 	else
 		draw_antic_ptr = draw_antic_table[byte >> 6][anticmode];
 }
-
-#endif /* !defined(BASIC) */
 
 void ANTIC_PutByte(UWORD addr, UBYTE byte)
 {
@@ -3224,40 +3195,8 @@ glitch */
 		}
 #endif /* NEW_CYCLE_EXACT */
 		DMACTL = byte;
-#if defined(BASIC)
-		break;
-#else
 		switch (byte & 0x03) {
 		case 0x00:
-			/* no ANTIC_load when screen off */
-			/* chars_read[NORMAL0] = 0;
-			chars_read[NORMAL1] = 0;
-			chars_read[NORMAL2] = 0;
-			chars_read[SCROLL0] = 0;
-			chars_read[SCROLL1] = 0;
-			chars_read[SCROLL2] = 0; */
-			/* no draw_antic_* when screen off */
-			/* chars_displayed[NORMAL0] = 0;
-			chars_displayed[NORMAL1] = 0;
-			chars_displayed[NORMAL2] = 0;
-			chars_displayed[SCROLL0] = 0;
-			chars_displayed[SCROLL1] = 0;
-			chars_displayed[SCROLL2] = 0;
-			x_min[NORMAL0] = 0;
-			x_min[NORMAL1] = 0;
-			x_min[NORMAL2] = 0;
-			x_min[SCROLL0] = 0;
-			x_min[SCROLL1] = 0;
-			x_min[SCROLL2] = 0;
-			ch_offset[NORMAL0] = 0;
-			ch_offset[NORMAL1] = 0;
-			ch_offset[NORMAL2] = 0;
-			ch_offset[SCROLL0] = 0;
-			ch_offset[SCROLL1] = 0;
-			ch_offset[SCROLL2] = 0; */
-			/* no borders when screen off, only background */
-			/* left_border_chars = 48 - LCHOP - RCHOP;
-			right_border_start = 0; */
 			break;
 		case 0x01:
 			chars_read[NORMAL0] = 32;
@@ -3474,7 +3413,6 @@ glitch */
 		if (CHACTL & 4)
 			chbase_20 ^= 7;
 		break;
-#endif /* defined(BASIC) */
 	case _WSYNC:
 #ifdef NEW_CYCLE_EXACT
 		if (DRAWING_SCREEN) {
@@ -3530,7 +3468,6 @@ case we have cpu2antic_ptr[WSYNC_C+1]-1 = 8 and in the 2nd =12  */
 }
 
 /* State ------------------------------------------------------------------- */
-#ifndef BASIC
 void AnticStateSave(void) {
 	SaveUBYTE(&DMACTL, 1);
 	SaveUBYTE(&CHACTL, 1);
@@ -3583,5 +3520,3 @@ void AnticStateRead(void) {
 	ANTIC_PutByte(_PMBASE, PMBASE);
 	ANTIC_PutByte(_CHBASE, CHBASE);
 }
-
-#endif /* BASIC */

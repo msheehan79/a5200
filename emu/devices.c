@@ -1649,85 +1649,6 @@ static void Device_H_Special(void)
 	SetN;
 }
 
-/* K: and E: handlers for BASIC version, using getchar() and putchar() --- */
-
-#ifdef BASIC
-
-static void Device_E_Read(void)
-{
-	int ch = getchar();
-	switch (ch) {
-	case EOF:
-		Atari800_Exit(FALSE);
-		exit(0);
-		break;
-	case '\n':
-		ch = 0x9b;
-		break;
-	default:
-		break;
-	}
-	regA = (UBYTE) ch;
-	regY = 1;
-	ClrN;
-}
-
-static void Device_E_Write(void)
-{
-	UBYTE ch = regA;
-	/* XXX: are '\f', '\b' and '\a' fully portable? */
-	switch (ch) {
-	case 0x7d: /* Clear Screen */
-		putchar('\x0c'); /* ASCII Form Feed */
-		break;
-	case 0x7e:
-		putchar('\x08'); /* ASCII Backspace */
-		break;
-	case 0x7f:
-		putchar('\t');
-		break;
-	case 0x9b:
-		putchar('\n');
-		break;
-	case 0xfd:
-		putchar('\x07'); /* ASCII Bell */
-		break;
-	default:
-		if ((ch >= 0x20) && (ch <= 0x7e))
-			putchar(ch);
-		break;
-	}
-	regY = 1;
-	ClrN;
-}
-
-static void Device_K_Read(void)
-{
-	int ch2;
-	int ch = getchar();
-	switch (ch) {
-	case EOF:
-		Atari800_Exit(FALSE);
-		exit(0);
-		break;
-	case '\n':
-		ch = 0x9b;
-		break;
-	default:
-		/* ignore characters until EOF or EOL */
-		do
-			ch2 = getchar();
-		while (ch2 != EOF && ch2 != '\n');
-		break;
-	}
-	regA = (UBYTE) ch;
-	regY = 1;
-	ClrN;
-}
-
-#endif /* BASIC */
-
-
 /* Atari BASIC loader ---------------------------------------------------- */
 
 static UWORD ehopen_addr = 0;
@@ -1760,8 +1681,6 @@ static void Device_RestoreEHCLOS(void)
 	Device_RestoreHandler(ehclos_addr, ESC_EHCLOS);
 }
 
-#ifndef BASIC
-
 static void Device_RestoreEHREAD(void)
 {
 	Device_RestoreHandler(ehread_addr, ESC_EHREAD);
@@ -1776,8 +1695,6 @@ static void Device_InstallIgnoreReady(void)
 {
 	Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_IgnoreReady);
 }
-
-#endif
 
 /* Atari Basic loader step 1: ignore "READY" printed on E: after booting */
 /* or step 6: ignore "READY" printed on E: after the "ENTER" command */
@@ -1795,11 +1712,7 @@ static void Device_IgnoreReady(void)
 		if (*ready_ptr == '\0') {
 			ready_ptr = NULL;
 			/* uninstall patch */
-#ifdef BASIC
-			Atari800_AddEscRts(ehwrit_addr, ESC_EHWRIT, Device_E_Write);
-#else
 			rts_handler = Device_RestoreEHWRIT;
-#endif
 			if (loading_basic == LOADING_BASIC_SAVED) {
 				basic_command_ptr = (const UBYTE *) "RUN \"E:\"\x9b";
 				Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_GetBasicCommand);
@@ -1830,13 +1743,9 @@ static void Device_IgnoreReady(void)
 		ready_ptr = ready_prompt;
 	}
 	/* call original handler */
-#ifdef BASIC
-	Device_E_Write();
-#else
 	rts_handler = Device_InstallIgnoreReady;
 	Device_RestoreEHWRIT();
 	regPC = ehwrit_addr;
-#endif
 }
 
 /* Atari Basic loader step 2: type command to load file from E: */
@@ -1854,11 +1763,7 @@ static void Device_GetBasicCommand(void)
 			Atari800_AddEscRts(ehopen_addr, ESC_EHOPEN, Device_OpenBasicFile);
 		basic_command_ptr = NULL;
 	}
-#ifdef BASIC
-	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_E_Read);
-#else
 	rts_handler = Device_RestoreEHREAD;
-#endif
 }
 
 /* Atari Basic loader step 3: open file */
@@ -1966,11 +1871,7 @@ static void Device_CloseBasicFile(void)
 		else
 			loading_basic = 0;
 	}
-#ifdef BASIC
-	Atari800_AddEscRts(ehread_addr, ESC_EHREAD, Device_E_Read);
-#else
 	Device_RestoreEHREAD();
-#endif
 	rts_handler = Device_RestoreEHCLOS;
 	regY = 1;
 	ClrN;

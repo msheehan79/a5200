@@ -31,10 +31,8 @@
 #include "pokey.h"
 #include "gtia.h"
 #include "sio.h"
-#ifndef BASIC
 #include "input.h"
 #include "statesav.h"
-#endif
 #ifdef SOUND
 #include "pokeysnd.h"
 #endif
@@ -353,12 +351,6 @@ void POKEY_Frame(void) {
  ***************************************************************************/
 
 void POKEY_Scanline(void) {
-#ifndef BASIC
-	//ALEK INPUT_Scanline();	/* Handle Amiga and ST mice. */
-						/* It's not a part of POKEY emulation, */
-						/* but it looks to be the best place to put it. */
-#endif
-
 	if (pot_scanline < 228)
 		pot_scanline++;
   
@@ -367,10 +359,6 @@ void POKEY_Scanline(void) {
 	random_scanline_counter += LINE_C;
 
 	/* on nonpatched i/o-operation, enable the cassette timing */
-/* ALEK
-	if (!enable_sio_patch)
-		CASSETTE_AddScanLine();
-*/
 
 	if (DELAYED_SERIN_IRQ > 0) {
 		if (--DELAYED_SERIN_IRQ == 0) {
@@ -501,8 +489,6 @@ void Update_Counter(int chan_mask)
 	}
 }
 
-#ifndef BASIC
-
 void POKEYStateSave(void)
 {
 	int SHIFT_KEY = 0;
@@ -582,5 +568,3 @@ void POKEYStateRead(void)
 	random_scanline_counter = (random_scanline_counter_hi << 16) |
 			random_scanline_counter_lo;
 }
-
-#endif
