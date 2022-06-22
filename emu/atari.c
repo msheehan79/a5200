@@ -45,18 +45,9 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
-#ifdef __EMX__
-#define INCL_DOS
-#include <os2.h>
-#endif
-#ifdef __BEOS__
-#include <OS.h>
-#endif
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
-
-//ALEK #include "main.h"
 
 #include "antic.h"
 #include "atari.h"
@@ -284,7 +275,6 @@ void Atari800_Initialise(void)
 	Device_Initialise();
 	RTIME8_Initialise();
 	SIO_Initialise ();
-	CASSETTE_Initialise();
 
 	INPUT_Initialise();
 

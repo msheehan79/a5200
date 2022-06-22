@@ -94,11 +94,6 @@ UBYTE PIA_GetByte(UWORD addr) {
 void PIA_PutByte(UWORD addr, UBYTE byte) {
 	switch (addr & 0x03) {
 	case _PACTL:
-                /* This code is part of the cassette emulation */
-		if ((PACTL ^ byte) & 0x08) {
-			/* The motor status has changed */
-			SIO_TapeMotor(byte & 0x08 ? 0 : 1);
-		}
 		PACTL = byte;
 		break;
 	case _PBCTL:

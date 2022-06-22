@@ -119,7 +119,7 @@ UBYTE POKEY_GetByte(UWORD addr)
 		byte = IRQST;
 		break;
 	case _SKSTAT:
-		byte = SKSTAT + (CASSETTE_IOLineStatus() << 4);
+		byte = SKSTAT + (1 << 4);
 		break;
 	}
 
@@ -202,12 +202,6 @@ void POKEY_PutByte(UWORD addr, UBYTE byte)
 	case _IRQEN:
 		IRQEN = byte;
 		IRQST |= ~byte & 0xf7;	/* Reset disabled IRQs except XMTDONE */
-		if (IRQEN & 0x20) {
-			SLONG delay;
-			delay = CASSETTE_GetInputIRQDelay();
-			if (delay > 0)
-				DELAYED_SERIN_IRQ = delay;
-		}
 		if ((~IRQST & IRQEN) == 0)
 			IRQ = 0;
 		break;
@@ -357,23 +351,6 @@ void POKEY_Scanline(void) {
   POT_input[0] = PCPOT_input[0]; POT_input[1] = PCPOT_input[1]; POT_input[2] = PCPOT_input[2]; POT_input[3] = PCPOT_input[3];
   
 	random_scanline_counter += LINE_C;
-
-	/* on nonpatched i/o-operation, enable the cassette timing */
-
-	if (DELAYED_SERIN_IRQ > 0) {
-		if (--DELAYED_SERIN_IRQ == 0) {
-			if (IRQEN & 0x20) {
-				if (IRQST & 0x20) {
-					IRQST &= 0xdf;
-					SERIN = SIO_GetByte();
-				}
-				else {
-					SKSTAT &= 0xdf;
-				}
-				GenerateIRQ();
-			}
-		}
-	}
 
 	if (DELAYED_SEROUT_IRQ > 0) {
 		if (--DELAYED_SEROUT_IRQ == 0) {

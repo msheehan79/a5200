@@ -17,16 +17,11 @@ typedef enum tagUnitStatus {
 	ReadWrite
 } UnitStatus;
 
-extern char sio_status[256];
 extern UnitStatus drive_status[MAX_DRIVES];
 extern char sio_filename[MAX_DRIVES][FILENAME_MAX];
 
 #define SIO_LAST_READ 0
 #define SIO_LAST_WRITE 1
-extern int sio_last_op;
-extern int sio_last_op_time;
-extern int sio_last_drive; /* 1 .. 8 */
-extern int sio_last_sector;
 
 #define SIO_NoFrame         (0x00)
 #define SIO_CommandFrame    (0x01)
@@ -35,13 +30,10 @@ extern int sio_last_sector;
 #define SIO_WriteFrame      (0x04)
 #define SIO_FinalStatus     (0x05)
 #define SIO_FormatFrame     (0x06)
-#define SIO_CasRead         (0x60)
 
 UBYTE SIO_ChkSum(const UBYTE *buffer, int length);
-void SIO_TapeMotor(int onoff);
 void SwitchCommandFrame(int onoff);
 void SIO_PutByte(int byte);
-int SIO_GetByte(void);
 void SIO_Initialise(void);
 void SIO_Exit(void);
 
