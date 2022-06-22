@@ -1140,18 +1140,12 @@ size_t retro_serialize_size(void)
 
 bool retro_serialize(void *data, size_t size)
 {
-   if (SaveAtariState(data, size, 0))
-      return true;
-
-   return false;
+   return SaveAtariState(data, size, 0);
 }
 
 bool retro_unserialize(const void *data, size_t size)
 {
-   if (ReadAtariState(data, size))
-      return true;
-
-   return false;
+   return ReadAtariState(data, size);
 }
 
 void retro_cheat_reset(void)
@@ -1217,7 +1211,7 @@ bool retro_load_game(const struct retro_game_info *info)
    load_bios();
 
    /* Load game */
-   if (!Atari800_OpenFile(rom_data, rom_size, 1, 1, 1))
+   if (!Atari800_OpenFile(rom_data, rom_size))
    {
       a5200_log(RETRO_LOG_INFO, "Failed to load content: %s\n", info->path);
       goto error;

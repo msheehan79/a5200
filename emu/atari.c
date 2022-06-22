@@ -175,14 +175,12 @@ void Atari800_PatchOS(void) {
 }
 
 void Warmstart(void) {
-	{
-		PIA_Reset();
-		ANTIC_Reset();
-		/* CPU_Reset() must be after PIA_Reset(),
-		   because Reset routine vector must be read from OS ROM */
-		CPU_Reset();
-		/* note: POKEY and GTIA have no Reset pin */
-	}
+	PIA_Reset();
+	ANTIC_Reset();
+	/* CPU_Reset() must be after PIA_Reset(),
+	   because Reset routine vector must be read from OS ROM */
+	CPU_Reset();
+	/* note: POKEY and GTIA have no Reset pin */
 #ifdef __PLUS
 	HandleResetEvent();
 #endif
@@ -292,30 +290,28 @@ static int Atari800_DetectFileType(const uint8_t *data, size_t size) {
 	return AFILE_ERROR;
 }
 
-int Atari800_OpenFile(const uint8_t *data, size_t size, int reboot, int diskno, int readonly) {
+int Atari800_OpenFile(const uint8_t *data, size_t size)
+{
+        int type;
 	// Remove cart if exist
 	CART_Remove();
 
-	int type = Atari800_DetectFileType(data, size);
+	type = Atari800_DetectFileType(data, size);
 
-	switch (type) {
-		case AFILE_CART:
-		case AFILE_ROM:
-			if (CART_Insert(data, size) != 0) {
-			  return AFILE_ERROR;
-			}
-			if (reboot)
-			  Coldstart();
-			break;
-		default:
-			type = AFILE_ERROR;
-			break;
+        if (type == AFILE_CART || type == AFILE_ROM) 
+	{
+		if (CART_Insert(data, size) == 0)
+		{
+			Coldstart();
+			return type;
+		}
 	}
-	return type;
+	return AFILE_ERROR;
 }
 
-int Atari800_Initialise(void) {
-  Device_Initialise();
+void Atari800_Initialise(void)
+{
+	Device_Initialise();
 	RTIME8_Initialise();
 	SIO_Initialise ();
 	CASSETTE_Initialise();
@@ -332,8 +328,6 @@ int Atari800_Initialise(void) {
 	POKEY_Initialise();
 
 	Atari800_InitialiseMachine();
-
-	return TRUE;
 }
 
 UNALIGNED_STAT_DEF(atari_screen_write_long_stat)
@@ -344,51 +338,40 @@ UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
 UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
 
 int Atari800_Exit(void) {
-	int restart = 0;
 #ifndef __PLUS
-	if (!restart) {
-		SIO_Exit();	/* umount disks, so temporary files are deleted */
-	}
+	SIO_Exit(); /* umount disks, so temporary files are deleted */
 #endif /* __PLUS */
-	return restart;
+	return 0;
 }
 
 UBYTE Atari800_GetByte(UWORD addr) {
-	UBYTE byte = 0xff;
 	switch (addr & 0xff00) {
 	case 0x4f00:
 	case 0x8f00:
 		CART_BountyBob1(addr);
-		byte = 0;
-		break;
+		return 0;
 	case 0x5f00:
 	case 0x9f00:
 		CART_BountyBob2(addr);
-		byte = 0;
-		break;
+		return 0;
 	case 0xd000:				/* GTIA */
 	case 0xc000:				/* GTIA - 5200 */
-		byte = GTIA_GetByte(addr);
-		break;
+		return GTIA_GetByte(addr);
 	case 0xd200:				/* POKEY */
 	case 0xe800:				/* POKEY - 5200 */
 	case 0xeb00:				/* POKEY - 5200 */
-	  byte = POKEY_GetByte(addr);
-		break;
+		return POKEY_GetByte(addr);
 	case 0xd300:				/* PIA */
-		byte = PIA_GetByte(addr);
-		break;
+		return PIA_GetByte(addr);
 	case 0xd400:				/* ANTIC */
-		byte = ANTIC_GetByte(addr);
-		break;
+		return ANTIC_GetByte(addr);
 	case 0xd500:				/* bank-switching cartridges, RTIME-8 */
-		byte = CART_GetByte(addr);
-		break;
+		return CART_GetByte(addr);
 	default:
 		break;
 	}
 
-	return byte;
+	return 0xff;
 }
 
 void Atari800_PutByte(UWORD addr, UBYTE byte) {
@@ -424,9 +407,6 @@ void Atari800_PutByte(UWORD addr, UBYTE byte) {
 	}
 }
 
-void Atari800_UpdatePatches(void) {
-}
-
 #ifndef __PLUS
 
 void Atari800_Frame(void)
@@ -443,7 +423,7 @@ void MainStateSave(void) {
 	UBYTE temp;
 	int default_tv_mode;
 	int os = 0;
-	int default_system = 3;
+	int default_system = 6;
 	int pil_on = FALSE;
 
 	if (tv_mode == TV_PAL) {
@@ -456,10 +436,7 @@ void MainStateSave(void) {
 	}
 	SaveUBYTE(&temp, 1);
 
-	{
-		temp = 4;
-		default_system = 6;
-	}
+	temp = 4;
 	SaveUBYTE(&temp, 1);
 
 	SaveINT(&os, 1);

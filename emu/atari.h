@@ -58,19 +58,6 @@ extern int enable_sio_patch;
    Set to FALSE for accurate emulation with refresh_rate > 1. */
 extern int sprite_collisions_in_skipped_frames;
 
-/* Special key codes.
-   Store in key_code. */
-#define AKEY_WARMSTART             -2
-#define AKEY_COLDSTART             -3
-#define AKEY_EXIT                  -4
-#define AKEY_BREAK                 -5
-#define AKEY_UI                    -7
-#define AKEY_SCREENSHOT            -8
-#define AKEY_SCREENSHOT_INTERLACE  -9
-#define AKEY_START                 -10
-#define AKEY_SELECT                -11
-#define AKEY_OPTION                -12
-
 /* File types returned by Atari800_DetectFileType() and Atari800_OpenFile(). */
 #define AFILE_ERROR      0
 #define AFILE_ATR        1
@@ -89,7 +76,7 @@ extern int sprite_collisions_in_skipped_frames;
 #define AFILE_STATE_GZ   14
 
 /* Initializes Atari800 emulation core. */
-int Atari800_Initialise(void);
+void Atari800_Initialise(void);
 
 /* Emulates one frame (1/50sec for PAL, 1/60sec for NTSC). */
 void Atari800_Frame(void);
@@ -104,14 +91,11 @@ void Warmstart(void);
    You should call Coldstart() after it. */
 int Atari800_InitialiseMachine(void);
 
-/* Reinitializes patches after enable_*_patch change. */
-void Atari800_UpdatePatches(void);
-
 /* Auto-detects file type and mounts the file in the emulator.
    reboot: Coldstart() for disks, cartridges and tapes
    diskno: drive number for disks (1-8)
    readonly: mount disks as read-only */
-int Atari800_OpenFile(const uint8_t *data, size_t size, int reboot, int diskno, int readonly);
+int Atari800_OpenFile(const uint8_t *data, size_t size);
 
 /* Shuts down Atari800 emulation core. */
 int Atari800_Exit(void);
