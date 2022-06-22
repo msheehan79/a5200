@@ -78,20 +78,10 @@
 #include "util.h"
 #include "screen.h"
 #include "statesav.h"
-#if defined(SOUND) && !defined(__PLUS)
+#if defined(SOUND)
 #include "pokeysnd.h"
 #include "sound.h"
 #endif
-
-#ifdef __PLUS
-#include "macros.h"
-#include "display_win.h"
-#include "misc_win.h"
-#include "registry.h"
-#include "timing.h"
-#include "FileService.h"
-#include "Helpers.h"
-#endif /* __PLUS */
 
 int tv_mode = TV_NTSC;
 int enable_sio_patch = TRUE;
@@ -158,12 +148,7 @@ void Atari800_RunEsc(UBYTE esc_code)
 		return;
 	}
 	cim_encountered = 1;
-#ifndef __PLUS
-	if (!Atari800_Exit())
-		exit(0);
-#else /* __PLUS */
 	Atari800_Exit();
-#endif /* __PLUS */
 }
 
 void Atari800_PatchOS(void) {
@@ -181,9 +166,6 @@ void Warmstart(void) {
 	   because Reset routine vector must be read from OS ROM */
 	CPU_Reset();
 	/* note: POKEY and GTIA have no Reset pin */
-#ifdef __PLUS
-	HandleResetEvent();
-#endif
 }
 
 void Coldstart(void) {
@@ -193,9 +175,6 @@ void Coldstart(void) {
 	   because Reset routine vector must be read from OS ROM */
 	CPU_Reset();
 	/* note: POKEY and GTIA have no Reset pin */
-#ifdef __PLUS
-	HandleResetEvent();
-#endif
 	/* reset cartridge to power-up state */
 	CART_Start();
 
@@ -338,9 +317,7 @@ UNALIGNED_STAT_DEF(memory_read_aligned_word_stat)
 UNALIGNED_STAT_DEF(memory_write_aligned_word_stat)
 
 int Atari800_Exit(void) {
-#ifndef __PLUS
 	SIO_Exit(); /* umount disks, so temporary files are deleted */
-#endif /* __PLUS */
 	return 0;
 }
 
@@ -407,8 +384,6 @@ void Atari800_PutByte(UWORD addr, UBYTE byte) {
 	}
 }
 
-#ifndef __PLUS
-
 void Atari800_Frame(void)
 {
 	INPUT_Frame();
@@ -416,8 +391,6 @@ void Atari800_Frame(void)
 	ANTIC_Frame();
 	POKEY_Frame();
 }
-
-#endif /* __PLUS */
 
 void MainStateSave(void) {
 	UBYTE temp;

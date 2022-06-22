@@ -37,9 +37,6 @@
 #include "pokeysnd.h"
 #include "util.h"
 #include "screen.h" /* for atari_screen */
-#ifdef __PLUS
-#include "input_win.h"
-#endif
 
 extern UBYTE PCPOT_input[8];
 unsigned int atari_analog[4] = {0};

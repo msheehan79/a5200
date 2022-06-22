@@ -59,8 +59,6 @@
 #include "atari.h"
 #include "memory.h"
 #include "statesav.h"
-#ifndef __PLUS
-#endif
 
 /* Windows headers define it */
 #undef ABSOLUTE
@@ -273,11 +271,7 @@ void NMI(void)
 	}
 
 /* Enter monitor */
-#ifdef __PLUS
 #define ENTER_MONITOR  Atari800_Exit()
-#else
-#define ENTER_MONITOR  if (!Atari800_Exit()) exit(0)
-#endif
 #define DO_BREAK \
 	UPDATE_GLOBAL_REGS; \
 	CPU_GetStatus(); \

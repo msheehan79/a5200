@@ -996,7 +996,6 @@ int SIO_GetByte(void)
 	return byte;
 }
 
-#if !defined(__PLUS)
 int Rotate_Disks(void)
 {
 	char tmp_filenames[MAX_DRIVES][FILENAME_MAX];
@@ -1027,7 +1026,6 @@ int Rotate_Disks(void)
 
 	return bSuccess;
 }
-#endif /* !defined(__PLUS) */
 
 void SIOStateSave(void)
 {

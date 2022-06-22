@@ -66,9 +66,6 @@
 #include "pia.h" /* atari_os */
 #include "sio.h"
 #include "util.h"
-#ifdef __PLUS
-#include "misc_win.h"
-#endif
 
 #ifndef S_IREAD
 #define S_IREAD S_IRUSR
