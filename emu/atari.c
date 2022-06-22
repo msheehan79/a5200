@@ -95,7 +95,6 @@
 
 int ram_size = 16;
 int tv_mode = TV_NTSC;
-int disable_basic = TRUE;
 int enable_sio_patch = TRUE;
 
 int sprite_collisions_in_skipped_frames = FALSE;
@@ -209,10 +208,7 @@ void Coldstart(void) {
 	   and Start key (boot from cassette) */
 	consol_index = 2;
 	consol_table[2] = 0x0f;
-	if (disable_basic && !loading_basic) {
-		/* hold Option during reboot */
-		consol_table[2] &= ~CONSOL_OPTION;
-	}
+	consol_table[2] &= ~CONSOL_OPTION; /* Always disable BASIC - not available on A5200 */
 	if (hold_start) {
 		/* hold Start during reboot */
 		consol_table[2] &= ~CONSOL_START;

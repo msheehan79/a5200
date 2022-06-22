@@ -8,7 +8,6 @@ extern FILE *bin_file;
 
 int BIN_loader(const char *filename);
 extern int start_binloading;
-extern int loading_basic;
 #define LOADING_BASIC_SAVED              1
 #define LOADING_BASIC_LISTED             2
 #define LOADING_BASIC_LISTED_ATARI       3

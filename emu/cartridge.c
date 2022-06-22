@@ -32,7 +32,6 @@
 #include <utils/md5.h>
 
 #include "atari.h"
-#include "binload.h" /* loading_basic */
 #include "cartridge.h"
 #include "memory.h"
 #include "pia.h"

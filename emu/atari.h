@@ -58,9 +58,6 @@ extern int ram_size;
 #define TV_NTSC 262
 extern int tv_mode;
 
-/* TRUE to disable Atari BASIC when booting Atari (hold Option in XL/XE). */
-extern int disable_basic;
-
 /* TRUE to enable patched (fast) Serial I/O. */
 extern int enable_sio_patch;
 

@@ -33,7 +33,6 @@
 #include "sio.h"
 
 int start_binloading = FALSE;
-int loading_basic = 0;
 FILE *bin_file = NULL;
 
 /* Read a word from file */
@@ -142,7 +141,6 @@ int BIN_loader(const char *filename) {
 	{		/* close previously open file */
 		fclose(bin_file);
 		bin_file = NULL;
-		loading_basic = 0;
 	}
 	return 0;
 }
