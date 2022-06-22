@@ -489,7 +489,7 @@ UBYTE GTIA_GetByte(UWORD addr)
 				if (consol_index == 0 && hold_start) {
 					/* press Space after Start to start cassette boot */
 					press_space = 1;
-					hold_start = hold_start_on_reboot;
+					hold_start  = 0;
 				}
 			}
 			return byte;

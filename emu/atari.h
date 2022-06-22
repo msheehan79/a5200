@@ -53,10 +53,6 @@ extern int tv_mode;
 
 #define SOUND_SAMPLE_RATE 44100
 
-/* Set to TRUE for faster emulation with refresh_rate > 1.
-   Set to FALSE for accurate emulation with refresh_rate > 1. */
-extern int sprite_collisions_in_skipped_frames;
-
 /* File types returned by Atari800_DetectFileType() and Atari800_OpenFile(). */
 #define AFILE_ERROR      0
 #define AFILE_ATR        1
@@ -85,10 +81,6 @@ void Coldstart(void);
 
 /* Presses the Reset key in the emulated Atari. */
 void Warmstart(void);
-
-/* Reinitializes after machine_type or ram_size change.
-   You should call Coldstart() after it. */
-int Atari800_InitialiseMachine(void);
 
 /* Auto-detects file type and mounts the file in the emulator.
    reboot: Coldstart() for disks, cartridges and tapes
@@ -230,7 +222,6 @@ enum ESCAPE {
 typedef void (*EscFunctionType)(void);
 
 extern int hold_start;
-extern int hold_start_on_reboot; /* preserve hold_start after reboot */
 extern int press_space;
 
 extern int start_binloading;
@@ -243,9 +234,6 @@ void Atari800_AddEsc(UWORD address, UBYTE esc_code, EscFunctionType function);
 /* Puts an escape sequence followed by the RTS instruction. */
 void Atari800_AddEscRts(UWORD address, UBYTE esc_code, EscFunctionType function);
 
-/* Puts an escape sequence with an integrated RTS. */
-void Atari800_AddEscRts2(UWORD address, UBYTE esc_code, EscFunctionType function);
-
 /* Unregisters an escape sequence. You must cleanup the Atari memory yourself. */
 void Atari800_RemoveEsc(UBYTE esc_code);
 
@@ -257,9 +245,6 @@ UBYTE Atari800_GetByte(UWORD addr);
 
 /* Stores a byte at the specified special address (not RAM or ROM). */
 void Atari800_PutByte(UWORD addr, UBYTE byte);
-
-/* Sleeps until it's time to emulate next Atari frame. */
-void atari_sync(void);
 
 unsigned int Atari_PORT(unsigned int num);
 unsigned int Atari_TRIG(unsigned int num);

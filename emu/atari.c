@@ -65,16 +65,15 @@
 #include "pokeysnd.h"
 #endif
 
+unsigned int joy_5200_trig[4]  = {0};
+unsigned int joy_5200_stick[4] = {0};
+unsigned int joy_5200_pot[8]   = {0};
+
 int start_binloading = FALSE;
 
-int hold_start_on_reboot = 0;
 int hold_start = 0;
 int press_space = 0;
 int tv_mode = TV_NTSC;
-
-int sprite_collisions_in_skipped_frames = FALSE;
-
-//int emuos_mode = 1;	/* 0 = never use EmuOS, 1 = use EmuOS if real OS not available, 2 = always use EmuOS */
 
 /* Now we check address of every escape code, to make sure that the patch
    has been set by the emulator and is not a CIM in Atari program.
@@ -87,7 +86,8 @@ int sprite_collisions_in_skipped_frames = FALSE;
 static UWORD esc_address[256];
 static EscFunctionType esc_function[256];
 
-void Atari800_ClearAllEsc(void) {
+static void Atari800_ClearAllEsc(void)
+{
 	int i;
 	for (i = 0; i < 256; i++)
 		esc_function[i] = NULL;
@@ -108,20 +108,6 @@ void Atari800_AddEscRts(UWORD address, UBYTE esc_code, EscFunctionType function)
 	dPutByte(address + 2, 0x60);		/* RTS */
 }
 
-/* 0xd2 is ESCRTS, which works same as pair of ESC and RTS (I think so...).
-   So this function does effectively the same as Atari800_AddEscRts,
-   except that it modifies 2, not 3 bytes in Atari memory.
-   I don't know why it is done that way, so I simply leave it
-   unchanged (0xf2/0xd2 are used as in previous versions).
-*/
-void Atari800_AddEscRts2(UWORD address, UBYTE esc_code, EscFunctionType function)
-{
-	esc_address[esc_code] = address;
-	esc_function[esc_code] = function;
-	dPutByte(address, 0xd2);			/* ESCRTS */
-	dPutByte(address + 1, esc_code);	/* ESC CODE */
-}
-
 void Atari800_RemoveEsc(UBYTE esc_code)
 {
 	esc_function[esc_code] = NULL;
@@ -136,7 +122,8 @@ void Atari800_RunEsc(UBYTE esc_code)
 	Atari800_Exit();
 }
 
-void Warmstart(void) {
+void Warmstart(void)
+{
 	PIA_Reset();
 	ANTIC_Reset();
 	/* CPU_Reset() must be after PIA_Reset(),
@@ -145,7 +132,8 @@ void Warmstart(void) {
 	/* note: POKEY and GTIA have no Reset pin */
 }
 
-void Coldstart(void) {
+void Coldstart(void)
+{
 	PIA_Reset();
 	ANTIC_Reset();
 	/* CPU_Reset() must be after PIA_Reset(),
@@ -169,11 +157,13 @@ void Coldstart(void) {
 	consol_table[1] = consol_table[2];
 }
 
-int Atari800_InitialiseMachine(void) {
+/* Reinitializes after machine_type or ram_size change.
+   You should call Coldstart() after it. */
+static void Atari800_InitialiseMachine(void)
+{
 	Atari800_ClearAllEsc();
 	MEMORY_InitialiseMachine();
 	Device_UpdatePatches();
-	return TRUE;
 }
 
 static int Atari800_DetectFileType(const uint8_t *data, size_t size) {
@@ -410,4 +400,76 @@ void MainStateRead(void) {
 	ReadINT(&pil_on, 1);
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* CONFIG & INITIALISATION                                                    */
+/* -------------------------------------------------------------------------- */
+void Atari_Initialise(void)
+{
+   unsigned i;
+
+#ifdef SOUND
+   /* Initialise sound routines */
+#ifdef STEREO_SOUND
+  Pokey_sound_init(FREQ_17_EXACT, SOUND_SAMPLE_RATE, 2, 0);
+#else
+  Pokey_sound_init(FREQ_17_EXACT, SOUND_SAMPLE_RATE, 1, 0);
+#endif
+#endif
+
+   for (i = 0; i < 4; i++)
+   {
+      joy_5200_trig[i]  = 1;
+      joy_5200_stick[i] = STICK_CENTRE;
+      atari_analog[i]   = 0;
+   }
+
+   for (i = 0; i < 8; i++)
+      joy_5200_pot[i] = JOY_5200_CENTER;
+
+   key_consol = CONSOL_NONE;
+}
+
+/* -------------------------------------------------------------------------- */
+unsigned int Atari_PORT(unsigned int num)
+{
+   /* num is port index
+    * > port 0: controller 0, 1
+    * > port 1: controller 2, 3 */
+   switch (num)
+   {
+      case 0:
+         return (joy_5200_stick[1] << 4) | joy_5200_stick[0];
+      case 1:
+         return (joy_5200_stick[3] << 4) | joy_5200_stick[2];
+      default:
+         break;
+   }
+
+   return (STICK_CENTRE << 4) | STICK_CENTRE;
+}
+
+/* -------------------------------------------------------------------------- */
+unsigned int Atari_TRIG(unsigned int num)
+{
+   /* num is controller index */
+   if (num < 4)
+      return joy_5200_trig[num];
+
+   return 1;
+}
+
+/* -------------------------------------------------------------------------- */
+unsigned int Atari_POT(unsigned int num)
+{
+   /* num is analog axis index
+    * > 0, 1 - controller 1: x, y
+    * > 2, 3 - controller 2: x, y
+    * > 4, 5 - controller 3: x, y
+    * > 6, 7 - controller 4: x, y */
+   if (num < 8)
+      return joy_5200_pot[num];
+
+   return JOY_5200_CENTER;
 }
