@@ -5,7 +5,5 @@
 
 //#define INTERPOLATE_SOUND 1
 
-#define CLIP_SOUND 1
-
 // Define to allow stereo sound. 
 //#define STEREO_SOUND 1

@@ -18,7 +18,6 @@ SOURCES_C := \
 	$(CORE_SRC_DIR)/antic.c \
 	$(CORE_SRC_DIR)/atari.c \
 	$(CORE_SRC_DIR)/atari_nds.c \
-	$(CORE_SRC_DIR)/binload.c \
 	$(CORE_SRC_DIR)/cartridge.c \
 	$(CORE_SRC_DIR)/compfile.c \
 	$(CORE_SRC_DIR)/cpu.itcm.c \
@@ -26,13 +25,11 @@ SOURCES_C := \
 	$(CORE_SRC_DIR)/gtia.c \
 	$(CORE_SRC_DIR)/input.c \
 	$(CORE_SRC_DIR)/memory.c \
-	$(CORE_SRC_DIR)/pbi.c \
 	$(CORE_SRC_DIR)/pia.c \
 	$(CORE_SRC_DIR)/pokey.c \
 	$(CORE_SRC_DIR)/pokeysnd.c \
 	$(CORE_SRC_DIR)/rtime8.c \
 	$(CORE_SRC_DIR)/sio.c \
-	$(CORE_SRC_DIR)/sound_nds.c \
 	$(CORE_SRC_DIR)/statesav.c \
 	$(CORE_SRC_DIR)/util.c \
 

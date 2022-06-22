@@ -495,10 +495,10 @@ UWORD cl_lookup[128];
 
 /* Hi-res modes optimizations
    Now hi-res modes are drawn with words, not bytes. Endianess defaults
-   to little-endian. WORDS_BIGENDIAN should be defined when compiling on
+   to little-endian. MSB_FIRST should be defined when compiling on
    a big-endian machine. */
 
-#ifdef WORDS_BIGENDIAN
+#ifdef MSB_FIRST
 #define BYTE0_MASK		0xff00
 #define BYTE1_MASK		0x00ff
 #define HIRES_MASK_01	0xfff0

@@ -59,7 +59,6 @@
 #endif
 
 #include "atari.h"
-#include "binload.h"
 #include "cpu.h"
 #include "devices.h"
 #include "memory.h"

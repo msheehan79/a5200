@@ -26,7 +26,6 @@
 #include "cartridge.h"
 #include "input.h"
 #include "pia.h"
-#include "sound.h"
 #include "pokeysnd.h"
 #include "statesav.h"
 

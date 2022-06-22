@@ -1,6 +1,9 @@
 #ifndef _ANTIC_H_
 #define _ANTIC_H_
 
+#ifdef _WIN32
+#include <windows.h> /* ULONG */
+#endif
 #include "atari.h"
 
 /*

@@ -32,7 +32,6 @@
 #include "input.h"
 #include "memory.h"
 #include "pia.h"
-#include "platform.h"
 #include "pokeysnd.h"
 #include "util.h"
 

@@ -38,8 +38,8 @@ UBYTE PORTA;
 UBYTE PORTB;
 UBYTE PORT_input[2];
 
-int xe_bank = 0;
-int selftest_enabled = 0;
+static int xe_bank = 0;
+static int selftest_enabled = 0;
 
 UBYTE atari_basic[8192];
 UBYTE atari_os[16384];
@@ -47,7 +47,8 @@ UBYTE atari_os[16384];
 UBYTE PORTA_mask;
 UBYTE PORTB_mask;
 
-void PIA_Initialise(void) {
+void PIA_Initialise(void)
+{
 	PACTL = 0x3f;
 	PBCTL = 0x3f;
 	PORTA = 0xff;
@@ -58,78 +59,71 @@ void PIA_Initialise(void) {
 	PORT_input[1] = 0xff;
 }
 
-void PIA_Reset(void) {
+void PIA_Reset(void)
+{
 	PORTA = 0xff;
 	PORTB = 0xff;
 }
 
-UBYTE PIA_GetByte(UWORD addr) {
-	switch (addr & 0x03) {
-    case _PACTL:
-      return PACTL & 0x3f;
-    case _PBCTL:
-      return PBCTL & 0x3f;
-    case _PORTA:
-      if ((PACTL & 0x04) == 0) {
-        /* direction register */
-        return ~PORTA_mask;
-      }
-      else {
-        /* port state */
-        return PORT_input[0] & (PORTA | PORTA_mask);
-      }
-    case _PORTB:
-      if ((PBCTL & 0x04) == 0) {
-        /* direction register */
-        return ~PORTB_mask;
-      }
-      else
-        /* port state */
-          return PORT_input[1] & (PORTB | PORTB_mask);
-  }
+UBYTE PIA_GetByte(UWORD addr)
+{
+   switch (addr & 0x03)
+   {
+      case _PACTL:
+         return PACTL & 0x3f;
+      case _PBCTL:
+         return PBCTL & 0x3f;
+      case _PORTA:
+         /* direction register */
+         if ((PACTL & 0x04) == 0)
+            return ~PORTA_mask;
+         /* port state */
+         return PORT_input[0] & (PORTA | PORTA_mask);
+      case _PORTB:
+         /* direction register */
+         if ((PBCTL & 0x04) == 0)
+            return ~PORTB_mask;
+         /* port state */
+         return PORT_input[1] & (PORTB | PORTB_mask);
+   }
 	/* for stupid compilers */
 	return 0xff;
 }
 
-void PIA_PutByte(UWORD addr, UBYTE byte) {
-	switch (addr & 0x03) {
-	case _PACTL:
-		PACTL = byte;
-		break;
-	case _PBCTL:
-		/* This code is part of the serial I/O emulation */
-		if ((PBCTL ^ byte) & 0x08) {
-			/* The command line status has changed */
-			SwitchCommandFrame(byte & 0x08 ? 0 : 1);
-		}
-		PBCTL = byte;
-		break;
-	case _PORTA:
-		if ((PACTL & 0x04) == 0) {
-			/* set direction register */
- 			PORTA_mask = ~byte;
-		}
-		else {
-			/* set output register */
-			PORTA = byte;		/* change from thor */
-		}
-		break;
-	case _PORTB:
-		{
-			if ((PBCTL & 0x04) == 0) {
-				/* direction register */
-				PORTB_mask = ~byte;
-			}
-			else {
-				/* output register */
-				PORTB = byte;
-			}
-		}
-		break;
-	}
+void PIA_PutByte(UWORD addr, UBYTE byte)
+{
+   switch (addr & 0x03)
+   {
+      case _PACTL:
+         PACTL = byte;
+         break;
+      case _PBCTL:
+         /* This code is part of the serial I/O emulation */
+         /* The command line status has changed */
+         if ((PBCTL ^ byte) & 0x08)
+            SwitchCommandFrame(byte & 0x08 ? 0 : 1);
+         PBCTL = byte;
+         break;
+      case _PORTA:
+         /* set direction register */
+         if ((PACTL & 0x04) == 0)
+            PORTA_mask = ~byte;
+         /* set output register */
+         else
+            PORTA = byte;		/* change from thor */
+         break;
+      case _PORTB:
+         /* direction register */
+         if ((PBCTL & 0x04) == 0)
+            PORTB_mask = ~byte;
+         else
+            PORTB = byte;
+         break;
+   }
 }
 
-void PIAStateSave(void) {
+void PIAStateSave(void)
+{
 	int Ram256 = 0;
 
 	SaveUBYTE( &PACTL, 1 );
@@ -147,7 +141,8 @@ void PIAStateSave(void) {
 	SaveUBYTE( &PORTB_mask, 1 );
 }
 
-void PIAStateRead(void) {
+void PIAStateRead(void)
+{
 	int Ram256 = 0;
 
 	ReadUBYTE( &PACTL, 1 );

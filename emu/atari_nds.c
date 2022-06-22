@@ -17,7 +17,7 @@
 #include "config.h"
 #include "cpu.h"
 #include "input.h"
-#include "sound.h"
+#include "pokeysnd.h"
 
 unsigned int joy_5200_trig[4]  = {0};
 unsigned int joy_5200_stick[4] = {0};
@@ -31,8 +31,12 @@ void Atari_Initialise(void)
    unsigned i;
 
 #ifdef SOUND
-   /* initialise sound routines */
-   Sound_Initialise();
+   /* Initialise sound routines */
+#ifdef STEREO_SOUND
+  Pokey_sound_init(FREQ_17_EXACT, SOUND_SAMPLE_RATE, 2, 0);
+#else
+  Pokey_sound_init(FREQ_17_EXACT, SOUND_SAMPLE_RATE, 1, 0);
+#endif
 #endif
 
    for (i = 0; i < 4; i++)

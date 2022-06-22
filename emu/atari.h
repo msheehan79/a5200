@@ -2,11 +2,7 @@
 #define _ATARI_H_
 
 #include "config.h"
-#include <stdio.h> /* FILENAME_MAX */
 #include <stdint.h>
-#ifdef _WIN32
-#include <windows.h> /* For ULONG/SLONG */
-#endif
 
 /* Fundamental declarations ---------------------------------------------- */
 
@@ -53,6 +49,8 @@ extern int tv_mode;
    You should never display anything outside the middle 336 columns. */
 #define ATARI_WIDTH  384
 #define ATARI_HEIGHT 240
+
+#define SOUND_SAMPLE_RATE 44100
 
 /* Set to TRUE for faster emulation with refresh_rate > 1.
    Set to FALSE for accurate emulation with refresh_rate > 1. */
@@ -234,6 +232,10 @@ extern int hold_start;
 extern int hold_start_on_reboot; /* preserve hold_start after reboot */
 extern int press_space;
 
+extern int start_binloading;
+
+void Atari_Initialise(void);
+
 /* Puts an escape sequence at the specified address. */
 void Atari800_AddEsc(UWORD address, UBYTE esc_code, EscFunctionType function);
 
@@ -257,5 +259,9 @@ void Atari800_PutByte(UWORD addr, UBYTE byte);
 
 /* Sleeps until it's time to emulate next Atari frame. */
 void atari_sync(void);
+
+unsigned int Atari_PORT(unsigned int num);
+unsigned int Atari_TRIG(unsigned int num);
+unsigned int Atari_POT(unsigned int num);
 
 #endif /* _ATARI_H_ */

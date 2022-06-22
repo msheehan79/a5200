@@ -74,22 +74,22 @@ UBYTE GRACTL;
 
 /* Internal GTIA state ----------------------------------------------------- */
 
-int atari_speaker;
+static int atari_speaker;
 int consol_index = 0;
 UBYTE consol_table[3];
 UBYTE consol_mask;
 UBYTE TRIG[4];
-UBYTE TRIG_latch[4];
+static UBYTE TRIG_latch[4];
 
 void set_prior(UBYTE byte);			/* in antic.c */
 
 /* Player/Missile stuff ---------------------------------------------------- */
 
 /* change to 0x00 to disable collisions */
-UBYTE collisions_mask_missile_playfield = 0x0f;
-UBYTE collisions_mask_player_playfield = 0x0f;
-UBYTE collisions_mask_missile_player = 0x0f;
-UBYTE collisions_mask_player_player = 0x0f;
+#define COLLISIONS_MASK_MISSILE_PLAYFIELD 0x0f
+#define COLLISIONS_MASK_PLAYER_PLAYFIELD 0x0f
+#define COLLISIONS_MASK_MISSILE_PLAYER 0x0f
+#define COLLISIONS_MASK_PLAYER_PLAYER 0x0f
 
 #ifdef NEW_CYCLE_EXACT
 /* temporary collision registers for the current scanline only */
@@ -229,7 +229,7 @@ void GTIA_Initialise(void) {
 
 /* generate updated PxPL and MxPL for part of a scanline */
 /* slow, but should be called rarely */
-void generate_partial_pmpl_colls(int l, int r)
+static void generate_partial_pmpl_colls(int l, int r)
 {
 	int i;
 	if (r < 0 || l >= (int) sizeof(pm_scanline) / (int) sizeof(pm_scanline[0]))
@@ -256,11 +256,10 @@ void generate_partial_pmpl_colls(int l, int r)
 		M2PL |= (p & (0x10 << 2)) ?  p : 0;
 		M3PL |= (p & (0x10 << 3)) ?  p : 0;
 	}
-
 }
 
 /* update pm->pl collisions for a partial scanline */
-void update_partial_pmpl_colls(void)
+static void update_partial_pmpl_colls(void)
 {
 	int l = collision_curpos;
 	int r = XPOS * 2 - 37;
@@ -403,75 +402,75 @@ UBYTE GTIA_GetByte(UWORD addr)
 		return (((PF0PM & 0x10) >> 4)
 		      + ((PF1PM & 0x10) >> 3)
 		      + ((PF2PM & 0x10) >> 2)
-		      + ((PF3PM & 0x10) >> 1)) & collisions_mask_missile_playfield;
+		      + ((PF3PM & 0x10) >> 1)) & COLLISIONS_MASK_MISSILE_PLAYFIELD;
 	case _M1PF:
 		return (((PF0PM & 0x20) >> 5)
 		      + ((PF1PM & 0x20) >> 4)
 		      + ((PF2PM & 0x20) >> 3)
-		      + ((PF3PM & 0x20) >> 2)) & collisions_mask_missile_playfield;
+		      + ((PF3PM & 0x20) >> 2)) & COLLISIONS_MASK_MISSILE_PLAYFIELD;
 	case _M2PF:
 		return (((PF0PM & 0x40) >> 6)
 		      + ((PF1PM & 0x40) >> 5)
 		      + ((PF2PM & 0x40) >> 4)
-		      + ((PF3PM & 0x40) >> 3)) & collisions_mask_missile_playfield;
+		      + ((PF3PM & 0x40) >> 3)) & COLLISIONS_MASK_MISSILE_PLAYFIELD;
 	case _M3PF:
 		return (((PF0PM & 0x80) >> 7)
 		      + ((PF1PM & 0x80) >> 6)
 		      + ((PF2PM & 0x80) >> 5)
-		      + ((PF3PM & 0x80) >> 4)) & collisions_mask_missile_playfield;
+		      + ((PF3PM & 0x80) >> 4)) & COLLISIONS_MASK_MISSILE_PLAYFIELD;
 	case _P0PF:
 		return ((PF0PM & 0x01)
 		      + ((PF1PM & 0x01) << 1)
 		      + ((PF2PM & 0x01) << 2)
-		      + ((PF3PM & 0x01) << 3)) & collisions_mask_player_playfield;
+		      + ((PF3PM & 0x01) << 3)) & COLLISIONS_MASK_PLAYER_PLAYFIELD;
 	case _P1PF:
 		return (((PF0PM & 0x02) >> 1)
 		      + (PF1PM & 0x02)
 		      + ((PF2PM & 0x02) << 1)
-		      + ((PF3PM & 0x02) << 2)) & collisions_mask_player_playfield;
+		      + ((PF3PM & 0x02) << 2)) & COLLISIONS_MASK_PLAYER_PLAYFIELD;
 	case _P2PF:
 		return (((PF0PM & 0x04) >> 2)
 		      + ((PF1PM & 0x04) >> 1)
 		      + (PF2PM & 0x04)
-		      + ((PF3PM & 0x04) << 1)) & collisions_mask_player_playfield;
+		      + ((PF3PM & 0x04) << 1)) & COLLISIONS_MASK_PLAYER_PLAYFIELD;
 	case _P3PF:
 		return (((PF0PM & 0x08) >> 3)
 		      + ((PF1PM & 0x08) >> 2)
 		      + ((PF2PM & 0x08) >> 1)
-		      + (PF3PM & 0x08)) & collisions_mask_player_playfield;
+		      + (PF3PM & 0x08)) & COLLISIONS_MASK_PLAYER_PLAYFIELD;
 	case _M0PL:
 		update_partial_pmpl_colls();
-		return M0PL & collisions_mask_missile_player;
+		return M0PL & COLLISIONS_MASK_MISSILE_PLAYER;
 	case _M1PL:
 		update_partial_pmpl_colls();
-		return M1PL & collisions_mask_missile_player;
+		return M1PL & COLLISIONS_MASK_MISSILE_PLAYER;
 	case _M2PL:
 		update_partial_pmpl_colls();
-		return M2PL & collisions_mask_missile_player;
+		return M2PL & COLLISIONS_MASK_MISSILE_PLAYER;
 	case _M3PL:
 		update_partial_pmpl_colls();
-		return M3PL & collisions_mask_missile_player;
+		return M3PL & COLLISIONS_MASK_MISSILE_PLAYER;
 	case _P0PL:
 		update_partial_pmpl_colls();
 		return (((P1PL & 0x01) << 1)  /* mask in player 1 */
 		      + ((P2PL & 0x01) << 2)  /* mask in player 2 */
 		      + ((P3PL & 0x01) << 3)) /* mask in player 3 */
-		     & collisions_mask_player_player;
+		     & COLLISIONS_MASK_PLAYER_PLAYER;
 	case _P1PL:
 		update_partial_pmpl_colls();
 		return ((P1PL & 0x01)         /* mask in player 0 */
 		      + ((P2PL & 0x02) << 1)  /* mask in player 2 */
 		      + ((P3PL & 0x02) << 2)) /* mask in player 3 */
-		     & collisions_mask_player_player;
+		     & COLLISIONS_MASK_PLAYER_PLAYER;
 	case _P2PL:
 		update_partial_pmpl_colls();
 		return ((P2PL & 0x03)         /* mask in player 0 and 1 */
 		      + ((P3PL & 0x04) << 1)) /* mask in player 3 */
-		     & collisions_mask_player_player;
+		     & COLLISIONS_MASK_PLAYER_PLAYER;
 	case _P3PL:
 		update_partial_pmpl_colls();
-		return (P3PL & 0x07)          /* mask in player 0,1, and 2 */
-		     & collisions_mask_player_player;
+		return (P3PL & 0x07) /* mask in player 0,1, and 2 */
+		     & COLLISIONS_MASK_PLAYER_PLAYER;
 	case _TRIG0:
 		return TRIG[0] & TRIG_latch[0];
 	case _TRIG1:
@@ -509,12 +508,12 @@ void GTIA_PutByte(UWORD addr, UBYTE byte)
 
 #ifdef NEW_CYCLE_EXACT
 	int x; /* the cycle-exact update position in pm_scanline */
-	if (DRAWING_SCREEN) {
-		if ((addr & 0x1f) != PRIOR) {
+	if (DRAWING_SCREEN)
+   {
+		if ((addr & 0x1f) != PRIOR)
 			update_scanline();
-		} else {
+		else
 			update_scanline_prior(byte);
-		}
 	}
 #define UPDATE_PM_CYCLE_EXACT if(DRAWING_SCREEN) new_pm_scanline();
 #else

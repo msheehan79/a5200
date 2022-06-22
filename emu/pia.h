@@ -16,9 +16,6 @@ extern UBYTE PORTA_mask;
 extern UBYTE PORTB_mask;
 extern UBYTE PORT_input[2];
 
-extern int xe_bank;
-extern int selftest_enabled;
-
 extern UBYTE atari_basic[8192];
 extern UBYTE atari_os[16384];
 

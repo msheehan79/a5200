@@ -44,10 +44,6 @@ extern UBYTE regX;
 
 extern UBYTE IRQ;
 
-extern void (*rts_handler)(void);
-
-extern UBYTE cim_encountered;
-
 #define REMEMBER_PC_STEPS 64
 extern UWORD remember_PC[REMEMBER_PC_STEPS];
 extern unsigned int remember_PC_curpos;

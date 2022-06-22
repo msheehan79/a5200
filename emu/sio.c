@@ -29,11 +29,9 @@
 
 #include "antic.h"  /* ypos */
 #include "atari.h"
-#include "binload.h"
 #include "compfile.h"
 #include "cpu.h"
 #include "memory.h"
-#include "platform.h"
 #include "pokeysnd.h"
 #include "sio.h"
 #include "util.h"

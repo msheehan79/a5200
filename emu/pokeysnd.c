@@ -86,8 +86,6 @@ static uint32 Div_n_cnt[4 * MAXPOKEYS],		/* Divide by n counter. one for each ch
 static uint32 Samp_n_max,		/* Sample max.  For accuracy, it is *256 */
  Samp_n_cnt[2] __attribute__ ((aligned (4)));					/* Sample cnt. */
 
-extern int atari_speaker;
-
 #ifdef INTERPOLATE_SOUND
 static uint16 last_val = 0;		/* last output value */
 #endif
@@ -112,12 +110,9 @@ uint8 snd_num_pokeys = 1;
 static int snd_flags = 0;
 static int mz_quality = 0;		/* default quality for mzpokeysnd */
 
-int enable_new_pokey = FALSE;
 int stereo_enabled   = FALSE;
 
 /* multiple sound engine interface */
-static void null_pokey_process(void *sndbuffer, unsigned int sndn) {}
-void (*Pokey_process_ptr)(void *sndbuffer, unsigned int sndn) = null_pokey_process;
 
 static void Update_pokey_sound_rf(uint16, uint8, uint8, uint8);
 static void null_pokey_sound(uint16 addr, uint8 val, uint8 chip, uint8 gain) {}
@@ -225,12 +220,7 @@ void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed
 {
 	mz_quality = quality;
 }
-/*
-void Pokey_process(void *sndbuffer, unsigned int sndn)
-{
-	Pokey_process_ptr(sndbuffer, sndn);
-}
-*/
+
 /*****************************************************************************/
 /* Module:  Update_pokey_sound()                                             */
 /* Purpose: To process the latest control values stored in the AUDF, AUDC,   */
@@ -262,47 +252,38 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 	/* determine which address was changed */
 	switch (addr & 0x0f) {
 	case _AUDF1:
-		/* AUDF[CHAN1 + chip_offs] = val; */
 		chan_mask = 1 << CHAN1;
-		if (AUDCTL[chip] & CH1_CH2)		/* if ch 1&2 tied together */
-			chan_mask |= 1 << CHAN2;	/* then also change on ch2 */
+		if (AUDCTL[chip] & CH1_CH2) /* if ch 1&2 tied together */
+			chan_mask |= 1 << CHAN2; /* then also change on ch2 */
 		break;
 	case _AUDC1:
-		/* AUDC[CHAN1 + chip_offs] = val; */
 		AUDV[CHAN1 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN1;
 		break;
 	case _AUDF2:
-		/* AUDF[CHAN2 + chip_offs] = val; */
 		chan_mask = 1 << CHAN2;
 		break;
 	case _AUDC2:
-		/* AUDC[CHAN2 + chip_offs] = val; */
 		AUDV[CHAN2 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN2;
 		break;
 	case _AUDF3:
-		/* AUDF[CHAN3 + chip_offs] = val; */
 		chan_mask = 1 << CHAN3;
-		if (AUDCTL[chip] & CH3_CH4)		/* if ch 3&4 tied together */
-			chan_mask |= 1 << CHAN4;	/* then also change on ch4 */
+		if (AUDCTL[chip] & CH3_CH4) /* if ch 3&4 tied together */
+			chan_mask |= 1 << CHAN4; /* then also change on ch4 */
 		break;
 	case _AUDC3:
-		/* AUDC[CHAN3 + chip_offs] = val; */
 		AUDV[CHAN3 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN3;
 		break;
 	case _AUDF4:
-		/* AUDF[CHAN4 + chip_offs] = val; */
 		chan_mask = 1 << CHAN4;
 		break;
 	case _AUDC4:
-		/* AUDC[CHAN4 + chip_offs] = val; */
 		AUDV[CHAN4 + chip_offs] = (val & VOLUME_MASK) * gain;
 		chan_mask = 1 << CHAN4;
 		break;
 	case _AUDCTL:
-		/* AUDCTL[chip] = val; */
 		chan_mask = 15;			/* all channels */
 		break;
 	default:
@@ -450,8 +431,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 			}
 		}
 	}
-
-	/*    _enable(); */ /* RSF - removed for portability 31-MAR-97 */
 }
 
 
@@ -484,11 +463,7 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 	register uint8 *samp_cnt_w_ptr;
 	register uint32 event_min;
 	register uint8 next_event;
-#ifdef CLIP_SOUND
 	register int16 cur_val;		/* then we have to count as 16-bit signed */
-#else /* CLIP_SOUND */
-	register char  cur_val;		/* otherwise we'll simplify as 8-bit unsigned */
-#endif /* CLIP_SOUND */
 	register uint8 *out_ptr;
 	register uint8 audc;
 	register uint8 toggle;
@@ -730,20 +705,12 @@ void Pokey_process(void *sndbuffer, unsigned sndn)
 				iout += sampout;
 			}
 
-#ifdef CLIP_SOUND
-			if (iout > SAMP_MAX) {	/* then check high limit */
+			if (iout > SAMP_MAX)	/* then check high limit */
 				*buffer++ = (uint8) SAMP_MAX;	/* and limit if greater */
-			}
-			else if (iout < SAMP_MIN) {		/* else check low limit */
+			else if (iout < SAMP_MIN) /* else check low limit */
 				*buffer++ = (uint8) SAMP_MIN;	/* and limit if less */
-			}
-			else {				/* otherwise use raw value */
+			else /* otherwise use raw value */
 				*buffer++ = (uint8) iout;
-			}
-#else /* CLIP_SOUND */
-      char valcur= (char) ((iout));
-			*buffer++ = valcur+128;	/* clipping not selected, use value */
-#endif /* CLIP_SOUND */
 
 			*Samp_n_cnt += Samp_n_max;
 			/* and indicate one less byte in the buffer */

@@ -2,12 +2,11 @@
 #define _UTIL_H_
 
 #include "config.h"
-#include <stdio.h>
+#include <stdio.h> /* For FILE */
 #include <string.h>
-#ifdef WIN32
-#include <windows.h>
-#endif
-#ifdef HAVE_UNISTD_H
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <unistd.h>
 #endif
 

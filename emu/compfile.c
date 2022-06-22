@@ -29,6 +29,9 @@
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
+#ifdef _WIN32
+#include <windows.h> /* ULONG */
+#endif
 
 #include "atari.h"
 #include "compfile.h"

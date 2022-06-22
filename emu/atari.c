@@ -26,9 +26,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -39,11 +36,10 @@
 #  include <time.h>
 # endif
 #endif
-#ifdef HAVE_UNISTD_H
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <unistd.h>
-#endif
-#ifdef WIN32
-#include <windows.h>
 #endif
 #ifdef HAVE_LIBZ
 #include <zlib.h>
@@ -51,7 +47,6 @@
 
 #include "antic.h"
 #include "atari.h"
-#include "binload.h"
 #include "cartridge.h"
 #include "cpu.h"
 #include "devices.h"
@@ -61,7 +56,6 @@
 
 #include "memory.h"
 #include "pia.h"
-#include "platform.h"
 #include "pokeysnd.h"
 #include "rtime8.h"
 #include "sio.h"
@@ -69,8 +63,9 @@
 #include "statesav.h"
 #if defined(SOUND)
 #include "pokeysnd.h"
-#include "sound.h"
 #endif
+
+int start_binloading = FALSE;
 
 int hold_start_on_reboot = 0;
 int hold_start = 0;
@@ -138,7 +133,6 @@ void Atari800_RunEsc(UBYTE esc_code)
 		esc_function[esc_code]();
 		return;
 	}
-	cim_encountered = 1;
 	Atari800_Exit();
 }
 

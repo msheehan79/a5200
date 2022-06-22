@@ -162,11 +162,6 @@ void CPU_PutStatus(void)
 	C = (regP & 0x01);
 }
 
-/* For Atari Basic loader */
-void (*rts_handler)(void) = NULL;
-
-UBYTE cim_encountered = FALSE;
-
 /* Execution history */
 #define INC_RET_NESTING
 
@@ -177,7 +172,7 @@ UBYTE cim_encountered = FALSE;
 #define zGetWord(x) dGetWord(x)
 #endif
 #ifdef PREFETCH_CODE
-#if defined(WORDS_BIGENDIAN) || !defined(WORDS_UNALIGNED_OK)
+#if defined(MSB_FIRST) || !defined(WORDS_UNALIGNED_OK)
 #warning PREFETCH_CODE is efficient only on little-endian machines with WORDS_UNALIGNED_OK
 #endif
 #define OP_BYTE     ((UBYTE) addr)
@@ -1022,10 +1017,6 @@ void GO(int limit)
 	OPCODE(60)				/* RTS */
 		data = PL;
 		SET_PC((PL << 8) + data + 1);
-		if (rts_handler != NULL) {
-			rts_handler();
-			rts_handler = NULL;
-		}
 		DONE
 
 	OPCODE(61)				/* ADC (ab,x) */
@@ -1870,7 +1861,6 @@ void GO(int limit)
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
 
-		cim_encountered = TRUE;
 		ENTER_MONITOR;
 
 		CPU_PutStatus();

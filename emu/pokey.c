@@ -38,6 +38,29 @@
 #endif
 #include "antic.h"
 
+#define _STIMER 0x09
+#define _SKRES 0x0a
+#define _POTGO 0x0b
+#define _SEROUT 0x0d
+#define _IRQEN 0x0e
+#define _SKCTLS 0x0f
+
+#define _POT0 0x00
+#define _POT1 0x01
+#define _POT2 0x02
+#define _POT3 0x03
+#define _POT4 0x04
+#define _POT5 0x05
+#define _POT6 0x06
+#define _POT7 0x07
+#define _ALLPOT 0x08
+#define _KBCODE 0x09
+#define _RANDOM 0x0a
+#define _SERIN 0x0d
+#define _IRQST 0x0e
+#define _SKSTAT 0x0f
+
+
 UBYTE KBCODE;
 UBYTE SERIN;
 UBYTE IRQST;
@@ -73,59 +96,123 @@ UBYTE POKEY_GetByte(UWORD addr)
 		return 0;
 #endif
 	addr &= 0x0f;
-	if (addr < 8) {
-		byte = POT_input[addr];
-		if (byte <= pot_scanline)
-			return byte;
-		return pot_scanline;
-	}
-	switch (addr) {
-	case _ALLPOT:
-		{
-			unsigned int i;
-			for (i = 0; i < 8; i++)
-				if (POT_input[i] <= pot_scanline)
-					byte &= ~(1 << i);		// reset bit if pot value known 
-		}
-    return byte;
-    //return POT_all;
-		break;
-	case _KBCODE:
-		//byte = KBCODE;
-				if ( SKCTLS & 0x01 )
-					return 0xff;
-				else
-					return KBCODE | ((random_scanline_counter & 0x1)<<5);
-		break;
-	case _RANDOM:
-		if ((SKCTLS & 0x03) != 0) {
-			int i = random_scanline_counter + XPOS;
-			if (AUDCTL[0] & POLY9)
-				byte = poly9_lookup[i % POLY9_SIZE];
-			else {
-				const UBYTE *ptr;
-				i %= POLY17_SIZE;
-				ptr = poly17_lookup + (i >> 3);
-				i &= 7;
-				byte = (UBYTE) ((ptr[0] >> i) + (ptr[1] << (8 - i)));
-			}
-		}
-		break;
-	case _SERIN:
-		byte = SERIN;
-		break;
-	case _IRQST:
-		byte = IRQST;
-		break;
-	case _SKSTAT:
-		byte = SKSTAT + (1 << 4);
-		break;
-	}
+	if (addr < 8)
+   {
+      byte = POT_input[addr];
+      if (byte <= pot_scanline)
+         return byte;
+      return pot_scanline;
+   }
+	switch (addr)
+   {
+      case _ALLPOT:
+         {
+            unsigned int i;
+            for (i = 0; i < 8; i++)
+               if (POT_input[i] <= pot_scanline)
+                  byte &= ~(1 << i);		// reset bit if pot value known 
+         }
+         return byte;
+      case _KBCODE:
+         if ( SKCTLS & 0x01 )
+            return 0xff;
+         return KBCODE | ((random_scanline_counter & 0x1)<<5);
+      case _RANDOM:
+         if ((SKCTLS & 0x03) != 0) {
+            int i = random_scanline_counter + XPOS;
+            if (AUDCTL[0] & POLY9)
+               return poly9_lookup[i % POLY9_SIZE];
+            {
+               const UBYTE *ptr;
+               i %= POLY17_SIZE;
+               ptr = poly17_lookup + (i >> 3);
+               i &= 7;
+               byte = (UBYTE) ((ptr[0] >> i) + (ptr[1] << (8 - i)));
+            }
+         }
+         break;
+      case _SERIN:
+         return SERIN;
+      case _IRQST:
+         return IRQST;
+      case _SKSTAT:
+         return SKSTAT + (1 << 4);
+   }
 
 	return byte;
 }
 
-void Update_Counter(int chan_mask);
+/*****************************************************************************/
+/* Module:  Update_Counter()                                                 */
+/* Purpose: To process the latest control values stored in the AUDF, AUDC,   */
+/*          and AUDCTL registers.  It pre-calculates as much information as  */
+/*          possible for better performance.  This routine has been added    */
+/*          here again as I need the precise frequency for the pokey timers  */
+/*          again. The pokey emulation is therefore somewhat sub-optimal     */
+/*          since the actual pokey emulation should grab the frequency values */
+/*          directly from here instead of calculating them again.            */
+/*                                                                           */
+/* Author:  Ron Fries,Thomas Richter                                         */
+/* Date:    March 27, 1998                                                   */
+/*                                                                           */
+/* Inputs:  chan_mask: Channel mask, one bit per channel.                    */
+/*          The channels that need to be updated                             */
+/*                                                                           */
+/* Outputs: Adjusts local globals - no return value                          */
+/*                                                                           */
+/*****************************************************************************/
+
+static void Update_Counter(int chan_mask)
+{
+/************************************************************/
+/* As defined in the manual, the exact Div_n_cnt values are */
+/* different depending on the frequency and resolution:     */
+/*    64 kHz or 15 kHz - AUDF + 1                           */
+/*    1 MHz, 8-bit -     AUDF + 4                           */
+/*    1 MHz, 16-bit -    AUDF[CHAN1]+256*AUDF[CHAN2] + 7    */
+/************************************************************/
+
+	/* only reset the channels that have changed */
+
+	if (chan_mask & (1 << CHAN1)) {
+		/* process channel 1 frequency */
+		if (AUDCTL[0] & CH1_179)
+			DivNMax[CHAN1] = AUDF[CHAN1] + 4;
+		else
+			DivNMax[CHAN1] = (AUDF[CHAN1] + 1) * Base_mult[0];
+		if (DivNMax[CHAN1] < LINE_C)
+			DivNMax[CHAN1] = LINE_C;
+	}
+
+	if (chan_mask & (1 << CHAN2)) {
+		/* process channel 2 frequency */
+		if (AUDCTL[0] & CH1_CH2) {
+			if (AUDCTL[0] & CH1_179)
+				DivNMax[CHAN2] = AUDF[CHAN2] * 256 + AUDF[CHAN1] + 7;
+			else
+				DivNMax[CHAN2] = (AUDF[CHAN2] * 256 + AUDF[CHAN1] + 1) * Base_mult[0];
+		}
+		else
+			DivNMax[CHAN2] = (AUDF[CHAN2] + 1) * Base_mult[0];
+		if (DivNMax[CHAN2] < LINE_C)
+			DivNMax[CHAN2] = LINE_C;
+	}
+
+	if (chan_mask & (1 << CHAN4)) {
+		/* process channel 4 frequency */
+		if (AUDCTL[0] & CH3_CH4) {
+			if (AUDCTL[0] & CH3_179)
+				DivNMax[CHAN4] = AUDF[CHAN4] * 256 + AUDF[CHAN3] + 7;
+			else
+				DivNMax[CHAN4] = (AUDF[CHAN4] * 256 + AUDF[CHAN3] + 1) * Base_mult[0];
+		}
+		else
+			DivNMax[CHAN4] = (AUDF[CHAN4] + 1) * Base_mult[0];
+		if (DivNMax[CHAN4] < LINE_C)
+			DivNMax[CHAN4] = LINE_C;
+	}
+}
+
 
 static int POKEY_siocheck(void)
 {
@@ -333,7 +420,8 @@ void POKEY_Initialise(void)
 	random_scanline_counter = time(NULL) % POLY17_SIZE;
 }
 
-void POKEY_Frame(void) {
+void POKEY_Frame(void)
+{
 	random_scanline_counter %= (AUDCTL[0] & POLY9) ? POLY9_SIZE : POLY17_SIZE;
 }
 
@@ -343,7 +431,8 @@ void POKEY_Frame(void) {
  ** for most applications                                                 **
  ***************************************************************************/
 
-void POKEY_Scanline(void) {
+void POKEY_Scanline(void)
+{
 	if (pot_scanline < 228)
 		pot_scanline++;
   
@@ -363,9 +452,8 @@ void POKEY_Scanline(void) {
 	if (DELAYED_XMTDONE_IRQ > 0)
 		if (--DELAYED_XMTDONE_IRQ == 0) {
 			IRQST &= 0xf7;
-			if (IRQEN & 0x08) {
+			if (IRQEN & 0x08)
 				GenerateIRQ();
-			}
 		}
 
 	if ((DivNIRQ[CHAN1] -= LINE_C) < 0 ) {
@@ -390,78 +478,6 @@ void POKEY_Scanline(void) {
 			IRQST &= 0xfb;
 			GenerateIRQ();
 		}
-	}
-}
-
-/*****************************************************************************/
-/* Module:  Update_Counter()                                                 */
-/* Purpose: To process the latest control values stored in the AUDF, AUDC,   */
-/*          and AUDCTL registers.  It pre-calculates as much information as  */
-/*          possible for better performance.  This routine has been added    */
-/*          here again as I need the precise frequency for the pokey timers  */
-/*          again. The pokey emulation is therefore somewhat sub-optimal     */
-/*          since the actual pokey emulation should grab the frequency values */
-/*          directly from here instead of calculating them again.            */
-/*                                                                           */
-/* Author:  Ron Fries,Thomas Richter                                         */
-/* Date:    March 27, 1998                                                   */
-/*                                                                           */
-/* Inputs:  chan_mask: Channel mask, one bit per channel.                    */
-/*          The channels that need to be updated                             */
-/*                                                                           */
-/* Outputs: Adjusts local globals - no return value                          */
-/*                                                                           */
-/*****************************************************************************/
-
-void Update_Counter(int chan_mask)
-{
-
-/************************************************************/
-/* As defined in the manual, the exact Div_n_cnt values are */
-/* different depending on the frequency and resolution:     */
-/*    64 kHz or 15 kHz - AUDF + 1                           */
-/*    1 MHz, 8-bit -     AUDF + 4                           */
-/*    1 MHz, 16-bit -    AUDF[CHAN1]+256*AUDF[CHAN2] + 7    */
-/************************************************************/
-
-	/* only reset the channels that have changed */
-
-	if (chan_mask & (1 << CHAN1)) {
-		/* process channel 1 frequency */
-		if (AUDCTL[0] & CH1_179)
-			DivNMax[CHAN1] = AUDF[CHAN1] + 4;
-		else
-			DivNMax[CHAN1] = (AUDF[CHAN1] + 1) * Base_mult[0];
-		if (DivNMax[CHAN1] < LINE_C)
-			DivNMax[CHAN1] = LINE_C;
-	}
-
-	if (chan_mask & (1 << CHAN2)) {
-		/* process channel 2 frequency */
-		if (AUDCTL[0] & CH1_CH2) {
-			if (AUDCTL[0] & CH1_179)
-				DivNMax[CHAN2] = AUDF[CHAN2] * 256 + AUDF[CHAN1] + 7;
-			else
-				DivNMax[CHAN2] = (AUDF[CHAN2] * 256 + AUDF[CHAN1] + 1) * Base_mult[0];
-		}
-		else
-			DivNMax[CHAN2] = (AUDF[CHAN2] + 1) * Base_mult[0];
-		if (DivNMax[CHAN2] < LINE_C)
-			DivNMax[CHAN2] = LINE_C;
-	}
-
-	if (chan_mask & (1 << CHAN4)) {
-		/* process channel 4 frequency */
-		if (AUDCTL[0] & CH3_CH4) {
-			if (AUDCTL[0] & CH3_179)
-				DivNMax[CHAN4] = AUDF[CHAN4] * 256 + AUDF[CHAN3] + 7;
-			else
-				DivNMax[CHAN4] = (AUDF[CHAN4] * 256 + AUDF[CHAN3] + 1) * Base_mult[0];
-		}
-		else
-			DivNMax[CHAN4] = (AUDF[CHAN4] + 1) * Base_mult[0];
-		if (DivNMax[CHAN4] < LINE_C)
-			DivNMax[CHAN4] = LINE_C;
 	}
 }
 
