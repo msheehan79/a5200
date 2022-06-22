@@ -84,7 +84,6 @@
 #endif
 
 int tv_mode = TV_NTSC;
-int enable_sio_patch = TRUE;
 
 int sprite_collisions_in_skipped_frames = FALSE;
 
@@ -149,14 +148,6 @@ void Atari800_RunEsc(UBYTE esc_code)
 	}
 	cim_encountered = 1;
 	Atari800_Exit();
-}
-
-void Atari800_PatchOS(void) {
-	if (enable_sio_patch)
-		return;
-	Atari800_RemoveEsc(ESC_COPENLOAD);
-	Atari800_RemoveEsc(ESC_COPENSAVE);
-	Atari800_RemoveEsc(ESC_SIOV);
 }
 
 void Warmstart(void) {

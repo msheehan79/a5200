@@ -43,9 +43,6 @@
 #define TV_NTSC 262
 extern int tv_mode;
 
-/* TRUE to enable patched (fast) Serial I/O. */
-extern int enable_sio_patch;
-
 /* Dimensions of atari_screen.
    atari_screen is ATARI_WIDTH * ATARI_HEIGHT bytes.
    Each byte is an Atari color code - use Palette_Get[RGB] functions
@@ -250,9 +247,6 @@ UBYTE Atari800_GetByte(UWORD addr);
 
 /* Stores a byte at the specified special address (not RAM or ROM). */
 void Atari800_PutByte(UWORD addr, UBYTE byte);
-
-/* Installs SIO patch and disables ROM checksum test. */
-void Atari800_PatchOS(void);
 
 /* Sleeps until it's time to emulate next Atari frame. */
 void atari_sync(void);
