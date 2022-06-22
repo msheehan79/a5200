@@ -53,7 +53,6 @@
 #include "atari.h"
 #include "binload.h"
 #include "cartridge.h"
-#include "cassette.h"
 #include "cpu.h"
 #include "devices.h"
 #include "gtia.h"
@@ -67,13 +66,15 @@
 #include "rtime8.h"
 #include "sio.h"
 #include "util.h"
-#include "screen.h"
 #include "statesav.h"
 #if defined(SOUND)
 #include "pokeysnd.h"
 #include "sound.h"
 #endif
 
+int hold_start_on_reboot = 0;
+int hold_start = 0;
+int press_space = 0;
 int tv_mode = TV_NTSC;
 
 int sprite_collisions_in_skipped_frames = FALSE;

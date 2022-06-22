@@ -37,7 +37,6 @@
 #include "pokeysnd.h"
 #endif
 #include "antic.h"
-#include "cassette.h"
 
 UBYTE KBCODE;
 UBYTE SERIN;

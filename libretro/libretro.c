@@ -26,7 +26,6 @@
 #include "cartridge.h"
 #include "input.h"
 #include "pia.h"
-#include "screen.h"
 #include "sound.h"
 #include "pokeysnd.h"
 #include "statesav.h"
@@ -196,7 +195,7 @@ static struct retro_input_descriptor input_descriptors[] = {
    { 0 },
 };
 
-static uint8_t *a5200_screen_buffer  = NULL;
+uint8_t *a5200_screen_buffer         = NULL;
 static uint16_t *video_buffer        = NULL;
 static uint16_t *video_buffer_prev   = NULL;
 static uint8_t *audio_samples_buffer = NULL;
@@ -1316,7 +1315,6 @@ void retro_init(void)
    a5200_use_official_bios = true;
 
    initialise_palette();
-   Screen_Initialise(a5200_screen_buffer);
    a5200_osk_init();
 }
 

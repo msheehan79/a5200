@@ -30,7 +30,6 @@
 #include "antic.h"  /* ypos */
 #include "atari.h"
 #include "binload.h"
-#include "cassette.h"
 #include "compfile.h"
 #include "cpu.h"
 #include "memory.h"

@@ -35,6 +35,9 @@
 
 /* Public interface ------------------------------------------------------ */
 
+#define ATARI_VISIBLE_WIDTH 336
+#define ATARI_LEFT_MARGIN 24
+
 /* RAM size in kilobytes.
    The only valid value for MACHINE_5200 is 16. */
 
@@ -226,6 +229,10 @@ enum ESCAPE {
 
 /* A function called to handle an escape sequence. */
 typedef void (*EscFunctionType)(void);
+
+extern int hold_start;
+extern int hold_start_on_reboot; /* preserve hold_start after reboot */
+extern int press_space;
 
 /* Puts an escape sequence at the specified address. */
 void Atari800_AddEsc(UWORD address, UBYTE esc_code, EscFunctionType function);

@@ -31,13 +31,11 @@
 #include "atari.h"
 #include "cpu.h"
 #include "gtia.h"
-#include "screen.h"
 
 #include "memory.h"
 #include "pokeysnd.h"
 #include "util.h"
 #include "input.h"
-#include "screen.h"
 #include "statesav.h"
 #ifdef NEW_CYCLE_EXACT
 #include "cycle_map.h"
@@ -45,6 +43,8 @@
 
 #define LCHOP 3			/* do not build lefmost 0..3 characters in wide mode */
 #define RCHOP 3			/* do not build rightmost 0..3 characters in wide mode */
+
+extern uint8_t *a5200_screen_buffer;
 
 int break_ypos = 999;
 #ifdef NEW_CYCLE_EXACT
@@ -2273,7 +2273,7 @@ void ANTIC_Frame(void) {
 		OVERSCREEN_LINE;
 	} while (ypos < 8);
 
-	scrn_ptr = (UWORD *) atari_screen;
+	scrn_ptr = (UWORD *)a5200_screen_buffer;
 
 #ifdef NEW_CYCLE_EXACT
 	cur_screen_pos = NOT_DRAWING;

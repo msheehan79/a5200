@@ -18,7 +18,6 @@
 #include "cpu.h"
 #include "input.h"
 #include "sound.h"
-#include "screen.h"
 
 unsigned int joy_5200_trig[4]  = {0};
 unsigned int joy_5200_stick[4] = {0};

@@ -17,14 +17,6 @@
    in different case. */
 int Util_chrieq(char c1, char c2);
 
-#ifdef WIN32
-#define Util_stricmp _stricmp
-#elif defined(HAVE_STRCASECMP)
-#define Util_stricmp strcasecmp
-#else
-#define Util_stricmp stricmp
-#endif
-
 /* Same as stpcpy() in some C libraries: copies src to dest
    and returns a pointer to the trailing NUL in dest. */
 char *Util_stpcpy(char *dest, const char *src);
@@ -35,11 +27,6 @@ char *Util_stpcpy(char *dest, const char *src);
 void *Util_malloc(size_t size);
 
 /* Filenames ------------------------------------------------------------- */
-
-/* I assume here that '\n' is not valid in filenames,
-   at least not as their first character. */
-#define FILENAME_NOT_SET               "\n"
-#define Util_filenamenotset(filename)  ((filename)[0] == '\n')
 
 #ifdef BACK_SLASH
 #define DIR_SEP_CHAR '\\'

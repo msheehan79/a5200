@@ -26,7 +26,6 @@
 #include <string.h>
 #include "antic.h"
 #include "atari.h"
-#include "cassette.h"
 #include "cartridge.h"
 #include "cpu.h"
 #include "gtia.h"
@@ -36,7 +35,6 @@
 #include "platform.h"
 #include "pokeysnd.h"
 #include "util.h"
-#include "screen.h" /* for atari_screen */
 
 extern UBYTE PCPOT_input[8];
 unsigned int atari_analog[4] = {0};
