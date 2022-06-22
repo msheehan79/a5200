@@ -56,15 +56,6 @@ char *Util_stpcpy(char *dest, const char *src)
 	return dest + len;
 }
 
-char *Util_strupper(char *s)
-{
-	char *p;
-	for (p = s; *p != '\0'; p++)
-		if (*p >= 'a' && *p <= 'z')
-			*p += 'A' - 'a';
-	return s;
-}
-
 void *Util_malloc(size_t size)
 {
 	void *ptr = malloc(size);
@@ -72,7 +63,7 @@ void *Util_malloc(size_t size)
 		Atari800_Exit();
 		exit(1);
 	}
-  memset(ptr, 0, size);
+	memset(ptr, 0, size);
 	return ptr;
 }
 

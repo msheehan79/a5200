@@ -28,12 +28,6 @@ extern int sio_last_op_time;
 extern int sio_last_drive; /* 1 .. 8 */
 extern int sio_last_sector;
 
-int SIO_Mount(int diskno, const char *filename, int b_open_readonly);
-void SIO_Dismount(int diskno);
-void SIO_DisableDrive(int diskno);
-int Rotate_Disks(void);
-void SIO(void);
-
 #define SIO_NoFrame         (0x00)
 #define SIO_CommandFrame    (0x01)
 #define SIO_StatusRead      (0x02)

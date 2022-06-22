@@ -771,15 +771,13 @@ static void Device_H_Open(void)
 			else {
 				char end_dir_str[FILENAME_MAX];
 				Util_splitpath(dir_path, NULL, end_dir_str);
-				fprintf(fp, "%s\n\n", /* Util_strupper */(end_dir_str));
+				fprintf(fp, "%s\n\n", end_dir_str);
 			}
 		}
 
 		while (Device_ReadDir(NULL, entryname, &isdir, &readonly, &size,
 		                      (aux2 >= 128) ? timetext : NULL)) {
-			char *ext;
-			/* Util_strupper(entryname); */
-			ext = strrchr(entryname, '.');
+			char *ext = strrchr(entryname, '.');
 			if (ext == NULL)
 				ext = "";
 			else {

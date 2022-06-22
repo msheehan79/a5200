@@ -29,9 +29,6 @@ int Util_chrieq(char c1, char c2);
    and returns a pointer to the trailing NUL in dest. */
 char *Util_stpcpy(char *dest, const char *src);
 
-/* Modifies the string to uppercase and returns it. */
-char *Util_strupper(char *s);
-
 /* Memory management ----------------------------------------------------- */
 
 /* malloc() with out-of-memory checking. Never returns NULL. */
