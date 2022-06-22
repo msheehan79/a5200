@@ -1257,7 +1257,7 @@ static void prepare_an_antic_2(int nchars, const UBYTE *ANTIC_memptr, const ULON
 static void draw_antic_2_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
 	INIT_ANTIC_2
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_2(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia9(t_pm_scanline_ptr);
 		return;
@@ -1302,7 +1302,7 @@ static void draw_antic_2_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 //#ifdef WORDS_UNALIGNED_OK
 	ULONG lookup_gtia10[16];
 	INIT_ANTIC_2
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_2(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia10(t_pm_scanline_ptr);
 		return;
@@ -1354,7 +1354,7 @@ static void draw_antic_2_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 static void draw_antic_2_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
 	INIT_ANTIC_2
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_2(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia11(t_pm_scanline_ptr);
 		return;
@@ -1821,7 +1821,7 @@ static void prepare_an_antic_e(int nchars, const UBYTE *ANTIC_memptr, const ULON
 static void draw_antic_e_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
 	ULONG lookup[16];
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_e(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia9(t_pm_scanline_ptr);
 		return;
@@ -1934,7 +1934,7 @@ static void prepare_an_antic_f(int nchars, const UBYTE *ANTIC_memptr, const ULON
 
 static void draw_antic_f_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_f(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia9(t_pm_scanline_ptr);
 		return;
@@ -1970,16 +1970,12 @@ static void draw_antic_f_gtia9(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr
 
 static void draw_antic_f_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
-//ALEK 
-//#ifdef WORDS_UNALIGNED_OK
 	ULONG lookup_gtia10[16];
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_f(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia10(t_pm_scanline_ptr);
 		return;
 	}
-//ALEK 
-//#ifdef WORDS_UNALIGNED_OK
 	lookup_gtia10[0] = cl_lookup[C_PM0] | (cl_lookup[C_PM0] << 16);
 	lookup_gtia10[1] = cl_lookup[C_PM1] | (cl_lookup[C_PM1] << 16);
 	lookup_gtia10[2] = cl_lookup[C_PM2] | (cl_lookup[C_PM2] << 16);
@@ -2020,7 +2016,7 @@ static void draw_antic_f_gtia10(int nchars, const UBYTE *ANTIC_memptr, UWORD *pt
 
 static void draw_antic_f_gtia11(int nchars, const UBYTE *ANTIC_memptr, UWORD *ptr, const ULONG *t_pm_scanline_ptr)
 {
-	if ((unsigned long) ptr & 2) { /* HSCROL & 1 */
+	if ((uintptr_t) ptr & 2) { /* HSCROL & 1 */
 		prepare_an_antic_f(nchars, ANTIC_memptr, t_pm_scanline_ptr);
 		draw_an_gtia11(t_pm_scanline_ptr);
 		return;
