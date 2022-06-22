@@ -1876,15 +1876,8 @@ void GO(int limit)
 		UPDATE_GLOBAL_REGS;
 		CPU_GetStatus();
 
-#ifdef CRASH_MENU
-		crash_address = GET_PC();
-		crash_afterCIM = GET_PC() + 1;
-		crash_code = insn;
-		ui();
-#else
 		cim_encountered = TRUE;
 		ENTER_MONITOR;
-#endif /* CRASH_MENU */
 
 		CPU_PutStatus();
 		UPDATE_LOCAL_REGS;

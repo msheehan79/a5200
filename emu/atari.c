@@ -159,13 +159,6 @@ void Atari800_RunEsc(UBYTE esc_code)
 		esc_function[esc_code]();
 		return;
 	}
-#ifdef CRASH_MENU
-	regPC -= 2;
-	crash_address = regPC;
-	crash_afterCIM = regPC + 2;
-	crash_code = dGetByte(crash_address);
-	ui();
-#else /* CRASH_MENU */
 	cim_encountered = 1;
 #ifndef __PLUS
 	if (!Atari800_Exit())
@@ -173,7 +166,6 @@ void Atari800_RunEsc(UBYTE esc_code)
 #else /* __PLUS */
 	Atari800_Exit();
 #endif /* __PLUS */
-#endif /* CRASH_MENU */
 }
 
 void Atari800_PatchOS(void) {
