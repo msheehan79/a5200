@@ -89,20 +89,15 @@ extern "C" {
 #define SND_BIT16	1
 #define SND_STEREO	2
 
-extern int32 snd_playback_freq;
-extern uint8 snd_num_pokeys;
-
 extern int stereo_enabled;
 
 extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);
 extern void (*Update_serio_sound)(int out, UBYTE data);
 
-int Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
+void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
                      unsigned int flags
                      );
 void Pokey_process(void *sndbuffer, unsigned sndn);
-int Pokey_DoInit(void);
-void Pokey_set_mzquality(int quality);
 
 #ifdef __cplusplus
 }

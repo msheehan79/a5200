@@ -101,14 +101,8 @@ int	sampbuf_last = 0;		/* last absolute time */
 int	sampbuf_AUDV[4 * MAXPOKEYS];	/* prev. channel volume */
 int	sampbuf_lastval = 0;		/* last volume */
 int	sampout;			/* last out volume */
-uint16 samp_freq;
+uint16  samp_freq;
 int	samp_consol_val = 0;		/* actual value of console sound */
-
-static uint32 snd_freq17 = FREQ_17_EXACT;
-int32 snd_playback_freq = 44100;
-uint8 snd_num_pokeys = 1;
-static int snd_flags = 0;
-static int mz_quality = 0;		/* default quality for mzpokeysnd */
 
 int stereo_enabled   = FALSE;
 
@@ -161,12 +155,11 @@ void (*Update_pokey_sound) (uint16 addr, uint8 val, uint8 chip, uint8 gain)
 /* Outputs: Adjusts local globals - no return value                          */
 /*                                                                           */
 /*****************************************************************************/
-
-static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
-           uint8 num_pokeys, unsigned int flags)
+void 
+Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
+		unsigned int flags)
 {
 	uint8 chan;
-
 	Update_pokey_sound = Update_pokey_sound_rf;
 
 	samp_freq = playback_freq;
@@ -194,31 +187,6 @@ static int Pokey_sound_init_rf(uint32 freq17, uint16 playback_freq,
 
 	/* set the number of pokey chips currently emulated */
 	Num_pokeys = num_pokeys;
-
-	return 0; /* OK */
-}
-
-int Pokey_DoInit(void) {
-	return Pokey_sound_init_rf(snd_freq17, (uint16) snd_playback_freq,
-	snd_num_pokeys, snd_flags);
-}
-
-int 
-Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
-                     unsigned int flags
-)
-{
-	snd_freq17 = freq17;
-	snd_playback_freq = playback_freq;
-	snd_num_pokeys = num_pokeys;
-	snd_flags = flags;
-
-	return Pokey_DoInit();
-}
-
-void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed? */
-{
-	mz_quality = quality;
 }
 
 /*****************************************************************************/
@@ -240,7 +208,8 @@ void Pokey_set_mzquality(int quality)	/* specially for win32, perhaps not needed
 /*                                                                           */
 /*****************************************************************************/
 
-static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain) {
+static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain)
+{
 	uint32 new_val = 0;
 	uint8 chan;
 	uint8 chan_mask;
@@ -433,7 +402,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 	}
 }
 
-
 /*****************************************************************************/
 /* Module:  Pokey_process()                                                  */
 /* Purpose: To fill the output buffer with the sound output based on the     */
@@ -452,8 +420,6 @@ static void Update_pokey_sound_rf(uint16 addr, uint8 val, uint8 chip, uint8 gain
 /*                                                                           */
 /*****************************************************************************/
 
-//void Pokey_process(void *sndbuffer) 
-//void Pokey_process_8(void *sndbuffer, unsigned sndn)
 void Pokey_process(void *sndbuffer, unsigned sndn)
 {
 	register char *buffer = (char  *) sndbuffer;
