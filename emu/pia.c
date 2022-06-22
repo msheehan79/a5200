@@ -136,10 +136,6 @@ void PIA_PutByte(UWORD addr, UBYTE byte) {
 
 void PIAStateSave(void) {
 	int Ram256 = 0;
-	if (ram_size == RAM_320_RAMBO)
-		Ram256 = 1;
-	else if (ram_size == RAM_320_COMPY_SHOP)
-		Ram256 = 2;
 
 	SaveUBYTE( &PACTL, 1 );
 	SaveUBYTE( &PBCTL, 1 );

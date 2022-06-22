@@ -35,23 +35,8 @@
 
 /* Public interface ------------------------------------------------------ */
 
-/* Machine type. */
-#define MACHINE_OSA   0
-#define MACHINE_OSB   1
-#define MACHINE_XLXE  2
-#define MACHINE_5200  3
-
 /* RAM size in kilobytes.
-   Valid values for MACHINE_OSA and MACHINE_OSB are: 16, 48, 52.
-   Valid values for MACHINE_XLXE are: 16, 64, 128, 192, RAM_320_RAMBO,
-   RAM_320_COMPY_SHOP, 576, 1088.
    The only valid value for MACHINE_5200 is 16. */
-#define RAM_320_RAMBO       320
-#define RAM_320_COMPY_SHOP  321
-extern int ram_size;
-
-/* Always call Atari800_InitialiseMachine() after changing machine_type
-   or ram_size! */
 
 /* Video system. */
 #define TV_PAL 312
@@ -85,28 +70,6 @@ extern int sprite_collisions_in_skipped_frames;
 #define AKEY_START                 -10
 #define AKEY_SELECT                -11
 #define AKEY_OPTION                -12
-
-/* Menu codes for Alt+letter shortcuts.
-   Store in alt_function and put AKEY_UI in key_code. */
-#define MENU_DISK             0
-#define MENU_CARTRIDGE        1
-#define MENU_RUN              2
-#define MENU_SYSTEM           3
-#define MENU_SOUND            4
-#define MENU_SOUND_RECORDING  5
-#define MENU_DISPLAY          6
-#define MENU_SETTINGS         7
-#define MENU_SAVESTATE        8
-#define MENU_LOADSTATE        9
-#define MENU_PCX              10
-#define MENU_PCXI             11
-#define MENU_BACK             12
-#define MENU_RESETW           13
-#define MENU_RESETC           14
-#define MENU_MONITOR          15
-#define MENU_ABOUT            16
-#define MENU_EXIT             17
-#define MENU_CASSETTE         18
 
 /* File types returned by Atari800_DetectFileType() and Atari800_OpenFile(). */
 #define AFILE_ERROR      0

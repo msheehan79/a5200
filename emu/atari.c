@@ -93,7 +93,6 @@
 #include "Helpers.h"
 #endif /* __PLUS */
 
-int ram_size = 16;
 int tv_mode = TV_NTSC;
 int enable_sio_patch = TRUE;
 
@@ -482,7 +481,6 @@ void MainStateRead(void) {
 
 	ReadUBYTE(&temp, 1);
 	ReadINT(&os, 1);
-	ram_size = 16;
 	ReadINT(&pil_on, 1);
 	ReadINT(&default_tv_mode, 1);
 	ReadINT(&default_system, 1);
