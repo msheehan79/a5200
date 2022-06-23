@@ -5,13 +5,9 @@
 #include "atari.h" /* UWORD */
 
 void Device_Initialise(void);
-void Device_Frame(void);
 void Device_UpdatePatches(void);
 
 #define DEFAULT_H_PATH  "H1:>DOS;>DOS"
-
-int Device_H_CountOpen(void);
-void Device_H_CloseAll(void);
 
 #define	ICHIDZ	0x0020
 #define	ICDNOZ	0x0021
@@ -51,8 +47,5 @@ void Device_H_CloseAll(void);
 #define DEVICE_TABLE_STAT	8
 #define DEVICE_TABLE_SPEC	10
 #define DEVICE_TABLE_INIT	12
-
-UWORD Device_UpdateHATABSEntry(char device, UWORD entry_address, UWORD table_address);
-void Device_RemoveHATABSEntry(char device, UWORD entry_address, UWORD table_address);
 
 #endif /* _DEVICES_H_ */

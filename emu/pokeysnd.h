@@ -92,7 +92,6 @@ extern "C" {
 extern int stereo_enabled;
 
 extern void (*Update_pokey_sound)(uint16 addr, uint8 val, uint8 /*chip*/, uint8 gain);
-extern void (*Update_serio_sound)(int out, UBYTE data);
 
 void Pokey_sound_init(uint32 freq17, uint16 playback_freq, uint8 num_pokeys,
                      unsigned int flags
