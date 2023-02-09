@@ -80,6 +80,11 @@ static retro_audio_sample_batch_t audio_batch_cb;
 #define A5200_JOY_CENTER 114
 #define A5200_VIRTUAL_NUMPAD_THRESHOLD 0.7
 #define A5200_NUM_PADS 2
+#define A5200_JOYPAD_BUTTONS 20
+
+#define RETRO_DEVICE_A5200_CONTROL_KEYMAP          RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0)
+
+static unsigned input_devices[A5200_NUM_PADS];
 
 /* Delay (in frames) between OSK cursor
  * movements when holding a direction */
@@ -164,36 +169,6 @@ static const unsigned input_analog_numpad_map[8] = {
    AKEY_5200_4,
 };
 
-static struct retro_input_descriptor input_descriptors[] = {
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Joystick Left (Digital)" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Joystick Up (Digital)" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Joystick Down (Digital)" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Joystick Right (Digital)" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Fire 1 / OSK Select" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Fire 2" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "NumPad #" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "NumPad *" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "NumPad 0" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,     "NumPad 5" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "Show/Hide OSK" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Pause" },
-   { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Start" },
-   { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_X, "Joystick X (Analog)" },
-   { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_Y, "Joystick Y (Analog)" },
-   { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X, "NumPad [1-9]" },
-   { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y, "NumPad [1-9]" },
-
-   { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "Joystick Left (Digital)" },
-   { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "Joystick Up (Digital)" },
-   { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "Joystick Down (Digital)" },
-   { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "Joystick Right (Digital)" },
-   { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,     "Fire 1" },
-   { 1, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X,  "Joystick X (Analog)" },
-   { 1, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y,  "Joystick Y (Analog)" },
-
-   { 0 },
-};
-
 uint8_t *a5200_screen_buffer         = NULL;
 static uint16_t *video_buffer        = NULL;
 static uint16_t *video_buffer_prev   = NULL;
@@ -216,6 +191,7 @@ static enum input_hack_type input_hack = INPUT_HACK_NONE;
 static int input_analog_deadzone       = (int)(0.15f * (float)LIBRETRO_ANALOG_RANGE);
 static bool input_analog_quadratic     = false;
 
+static bool input_osk_mode_enabled[A5200_NUM_PADS];
 static bool input_show_osk             = false;
 static bool input_osk_toggle_lock      = false;
 static uint16_t input_osk_cursor_latch = 0;
@@ -511,6 +487,99 @@ static void initialise_palette(void)
 
       a5200_palette_rgb565[i] = (r >> 3) << 11 | (g >> 3) << 6 | (b >> 3);
    }
+}
+
+static void init_input_descriptors(void)
+{
+   // This will hold the final set of descriptor info after we evaluate the configured inputs
+   static struct retro_input_descriptor input_descriptors[(A5200_JOYPAD_BUTTONS * A5200_NUM_PADS) + 1]; 
+
+   // Define descriptors for both the default and keymap layouts
+   static struct retro_input_descriptor input_descriptor_p1_default[] = {
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Joystick Left (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Joystick Up (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Joystick Down (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Joystick Right (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Fire 1 / OSK Select" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Fire 2" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "NumPad #" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "NumPad *" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "NumPad 0" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "NumPad 1" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,     "NumPad 5" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "Show/Hide OSK" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,     "NumPad 3" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,     "NumPad 7" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Pause" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Start" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_X, "Joystick X (Analog)" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_Y, "Joystick Y (Analog)" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X, "NumPad [1-9]" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y, "NumPad [1-9]" }
+   };
+
+   static struct retro_input_descriptor input_descriptor_p1_keymap[] = {
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Joystick Left (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Joystick Up (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Joystick Down (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Joystick Right (Digital)" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Fire 1 / OSK Select" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "Fire 2" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "NumPad #" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "NumPad *" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "NumPad 0" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "NumPad 1" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,     "NumPad 5" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "NumPad 9" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,     "NumPad 3" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,     "NumPad 7" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Pause" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Start" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_X, "Joystick X (Analog)" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,  RETRO_DEVICE_ID_ANALOG_Y, "Joystick Y (Analog)" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X, "NumPad 4(-)/6(+)" },
+      { 0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y, "NumPad 2(-)/8(+)" }
+   };
+   
+   static struct retro_input_descriptor input_descriptor_p2[] = {
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "Joystick Left (Digital)" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "Joystick Up (Digital)" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "Joystick Down (Digital)" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "Joystick Right (Digital)" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "Fire 1" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3,     "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2,     "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3,     "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "" },
+      { 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "" },
+      { 1, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X,  "Joystick X (Analog)" },
+      { 1, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y,  "Joystick Y (Analog)" },
+      { 1, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X, "" },
+      { 1, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y, "" },
+      { 0 }
+   };
+
+   // Evaluate the assigned device for P1 and copy the appropriate descriptors
+   switch (input_devices[0])
+   {
+      case RETRO_DEVICE_JOYPAD:
+         memcpy(input_descriptors, input_descriptor_p1_default, A5200_JOYPAD_BUTTONS * sizeof(struct retro_input_descriptor));
+         break;
+      case RETRO_DEVICE_A5200_CONTROL_KEYMAP:
+         memcpy(input_descriptors, input_descriptor_p1_keymap, A5200_JOYPAD_BUTTONS * sizeof(struct retro_input_descriptor));
+         break;
+   }
+
+   // Player 2 doesn't use the keypad so only one type of controller has been defined for P2
+   memcpy(input_descriptors + A5200_JOYPAD_BUTTONS, input_descriptor_p2, (A5200_JOYPAD_BUTTONS + 1) * sizeof(struct retro_input_descriptor));
+
+   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, input_descriptors);
 }
 
 /* BIOS core option must be checked once
@@ -853,8 +922,16 @@ static void update_input(void)
          key_code += AKEY_5200_HASH;
       else if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_R))
          key_code += AKEY_5200_0;
+      else if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_R2))
+         key_code += AKEY_5200_1;
       else if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_R3))
          key_code += AKEY_5200_5;
+      else if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_L) && !input_osk_mode_enabled[pad_idx])
+         key_code += AKEY_5200_9;
+      else if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_L2))
+         key_code += AKEY_5200_3;
+      else if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_L3))
+         key_code += AKEY_5200_7;
       else if (input_hack != INPUT_HACK_DUAL_STICK)
       {
          /* If dual stick hack is disabled, right analog
@@ -873,15 +950,18 @@ static void update_input(void)
       }
 
       /* OSK toggle */
-      if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_L))
+      if (input_osk_mode_enabled[pad_idx])
       {
-         if (!input_osk_toggle_lock)
-            input_show_osk = true;
+         if (joypad_bits & (1 << RETRO_DEVICE_ID_JOYPAD_L))
+         {
+            if (!input_osk_toggle_lock)
+               input_show_osk = true;
 
-         input_osk_toggle_lock = true;
+            input_osk_toggle_lock = true;
+         }
+         else
+            input_osk_toggle_lock = false;
       }
-      else
-         input_osk_toggle_lock = false;
 
       /* Dual stick hack
        * > Maps player 2's joystick to the right
@@ -1087,6 +1167,21 @@ void retro_set_environment(retro_environment_t cb)
 
    environ_cb = cb;
 
+   static const struct retro_controller_description port_1[] = {
+      { "Atari 5200 Joystick (OSD Keypad)", RETRO_DEVICE_JOYPAD },
+      { "Atari 5200 Joystick (Direct Keypad Buttons)", RETRO_DEVICE_A5200_CONTROL_KEYMAP }
+   };
+
+   static const struct retro_controller_description port_2[] = {
+      { "Atari 5200 Joystick", RETRO_DEVICE_JOYPAD }
+   };
+
+   static const struct retro_controller_info ports[] = {
+      { port_1, 2 },
+      { port_2, 1 },
+      { 0 },
+   };
+
    /* Initialise core options */
    libretro_set_core_options(environ_cb, &option_cats_supported);
 
@@ -1099,6 +1194,9 @@ void retro_set_environment(retro_environment_t cb)
    /* Request a persistent content data buffer */
    environ_cb(RETRO_ENVIRONMENT_SET_CONTENT_INFO_OVERRIDE,
          (void*)content_overrides);
+
+   /* Set controller info */
+   environ_cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
 }
 
 void retro_get_system_info(struct retro_system_info *info)
@@ -1127,8 +1225,25 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-   (void)port;
-   (void)device;
+   switch (device)
+   {
+      case RETRO_DEVICE_JOYPAD:
+         a5200_log(RETRO_LOG_INFO, "%s\n", "[libretro]: Found RETRO_DEVICE_JOYPAD");
+	 input_devices[port] = RETRO_DEVICE_JOYPAD;
+	 input_osk_mode_enabled[port] = true;
+	 break;
+      case RETRO_DEVICE_A5200_CONTROL_KEYMAP:
+         a5200_log(RETRO_LOG_INFO, "%s\n", "[libretro]: Found RETRO_DEVICE_A5200_CONTROL_KEYMAP");
+	 input_devices[port] = RETRO_DEVICE_A5200_CONTROL_KEYMAP;
+	 input_osk_mode_enabled[port] = false;
+	 break;
+      default:
+         a5200_log(RETRO_LOG_ERROR, "%s\n", "[libretro]: Invalid device, setting type to RETRO_DEVICE_JOYPAD");
+	 input_devices[port] = RETRO_DEVICE_JOYPAD;
+	 input_osk_mode_enabled[port] = true;
+   }
+
+   init_input_descriptors();
 }
 
 size_t retro_serialize_size(void) 
@@ -1199,10 +1314,6 @@ bool retro_load_game(const struct retro_game_info *info)
       a5200_log(RETRO_LOG_INFO, "RGB565 is not supported.\n");
       goto error;
    }
-
-   /* Set input descriptors */
-   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS,
-         input_descriptors);
 
    /* Load bios */
    check_bios_variable();
