@@ -123,6 +123,7 @@ else ifeq ($(platform), tvos-arm64)
 ifeq ($(IOSSDK),)
    IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
 endif
+	CC = clang -arch arm64 -isysroot $(IOSSDK)
 
 # Theos
 else ifeq ($(platform), theos_ios)
