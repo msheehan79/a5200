@@ -289,6 +289,20 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       },
       "15"
    },
+   {
+      "a5200_analog_device",
+      "Analog Device",
+      NULL,
+      "Set the device used for analog input.",
+      NULL,
+      NULL,
+      {
+         { "analog_stick", "Analog Stick" },
+         { "mouse", "Mouse" },
+         { NULL, NULL },
+      },
+      "analog_stick"
+   },
    { NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL },
 };
 

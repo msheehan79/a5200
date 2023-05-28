@@ -186,10 +186,21 @@ enum input_hack_type
    INPUT_HACK_SWAP_PORTS
 };
 
+enum analog_device_type
+{
+   ANALOG_DEVICE_ANALOG_STICK = 0,
+   ANALOG_DEVICE_MOUSE,
+};
+
 static unsigned input_shift_ctrl       = 0;
 static enum input_hack_type input_hack = INPUT_HACK_NONE;
 static int input_analog_deadzone       = (int)(0.15f * (float)LIBRETRO_ANALOG_RANGE);
 static bool input_analog_quadratic     = false;
+static enum analog_device_type analog_device = ANALOG_DEVICE_ANALOG_STICK;
+/* Used to track the abs position of the mouse pointer */
+static int mouse_abs_x = 0;
+static int mouse_abs_y = 0;
+static float mouse_scalar = 1000.f;
 
 static bool input_osk_mode_enabled[A5200_NUM_PADS];
 static bool input_show_osk             = false;
@@ -205,6 +216,16 @@ static bool a5200_use_official_bios = true;
 static bool libretro_supports_bitmasks = false;
 
 extern UBYTE PCPOT_input[8];
+
+static int min(int a, int b)
+{
+   return a < b ? a : b;
+}
+
+static int max(int a, int b)
+{
+   return a > b ? a : b;
+}
 
 /************************************
  * Interframe blending
@@ -691,6 +712,7 @@ static void check_variables(void)
    var.value           = NULL;
    joy_5200_analog_min = JOY_5200_MIN;
    joy_5200_analog_max = JOY_5200_MAX;
+   mouse_scalar = 1000.f;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) &&
        !string_is_empty(var.value))
@@ -698,9 +720,14 @@ static void check_variables(void)
       float range;
 
       if (string_is_equal(var.value, "auto"))
+      {
          range = cart_info.joy_analog_range;
+      }
       else
+      {
          range = (float)string_to_unsigned(var.value) / 100.0f;
+         mouse_scalar *= range;
+      }
 
       joy_5200_analog_min = JOY_5200_CENTER -
             (unsigned int)(((float)(JOY_5200_CENTER - JOY_5200_MIN) *
@@ -732,6 +759,20 @@ static void check_variables(void)
       input_analog_deadzone = (int)((float)deadzone * 0.01f *
             (float)LIBRETRO_ANALOG_RANGE);
    }
+
+   /* Analog Device */
+   var.key                = "a5200_analog_device";
+   var.value              = NULL;
+   analog_device = ANALOG_DEVICE_ANALOG_STICK;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) &&
+       !string_is_empty(var.value))
+   {
+      if (string_is_equal(var.value, "analog_stick"))
+         analog_device = ANALOG_DEVICE_ANALOG_STICK;
+      else if (string_is_equal(var.value, "mouse"))
+         analog_device = ANALOG_DEVICE_MOUSE;
+   }
 }
 
 static INLINE unsigned int a5200_get_analog_pot(int input)
@@ -758,6 +799,29 @@ static INLINE unsigned int a5200_get_analog_pot(int input)
 
    return JOY_5200_CENTER -
          (unsigned int)(((float)(JOY_5200_CENTER - joy_5200_analog_min) * -amplitude) + 0.5f);
+}
+
+static INLINE unsigned int a5200_get_mouse_pot(int input)
+{
+   /* Convert to amplitude */
+   float amplitude = (float)input / (float)LIBRETRO_ANALOG_RANGE;
+
+   /* Check whether analog response is quadratic */
+   if (input_analog_quadratic)
+   {
+      if (amplitude < 0.0)
+         amplitude = -(amplitude * amplitude);
+      else
+         amplitude = amplitude * amplitude;
+   }
+
+   /* Map to Atari 5200 values */
+   if (amplitude >= 0.0f)
+      return JOY_5200_CENTER +
+            (unsigned int)(((float)(JOY_5200_MAX - JOY_5200_CENTER) * amplitude) + 0.5f);
+
+   return JOY_5200_CENTER -
+         (unsigned int)(((float)(JOY_5200_CENTER - JOY_5200_MIN) * -amplitude) + 0.5f);
 }
 
 static unsigned a5200_get_analog_numpad_key(int input_x, int input_y)
@@ -823,17 +887,16 @@ static void update_input(void)
       unsigned joypad_bits = 0;
       size_t pad           = (input_hack == INPUT_HACK_SWAP_PORTS) ?
             ((A5200_NUM_PADS - 1) - pad_idx) : pad_idx;
-      int left_analog_x;
-      int left_analog_y;
-      int right_analog_x;
-      int right_analog_y;
 
       /* Set a well-defined initial state */
       joy_5200_stick[pad]          = STICK_CENTRE;
       joy_5200_trig[pad]           = 1;
       atari_analog[pad]            = 0;
-      joy_5200_pot[(pad << 1) + 0] = JOY_5200_CENTER;
-      joy_5200_pot[(pad << 1) + 1] = JOY_5200_CENTER;
+      if (analog_device == ANALOG_DEVICE_ANALOG_STICK)
+      {
+         joy_5200_pot[(pad << 1) + 0] = JOY_5200_CENTER;
+         joy_5200_pot[(pad << 1) + 1] = JOY_5200_CENTER;
+      }
 
       /* Read input */
       if (libretro_supports_bitmasks)
@@ -872,23 +935,40 @@ static void update_input(void)
          joy_5200_stick[pad] = STICK_RIGHT;
 
       /* Analog joystick */
-      left_analog_x = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
-            RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
-      left_analog_y = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
-            RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
-
-      if ((left_analog_x < -input_analog_deadzone) ||
-          (left_analog_x > input_analog_deadzone))
+      if (analog_device == ANALOG_DEVICE_ANALOG_STICK)
       {
-         joy_5200_pot[(pad << 1) + 0] = a5200_get_analog_pot(left_analog_x);
-         atari_analog[pad]            = 1;
+         int left_analog_x = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
+                                            RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
+         int left_analog_y = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
+                                            RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
+
+         if ((left_analog_x < -input_analog_deadzone) ||
+             (left_analog_x > input_analog_deadzone))
+         {
+            joy_5200_pot[(pad << 1) + 0] = a5200_get_analog_pot(left_analog_x);
+            atari_analog[pad] = 1;
+         }
+
+         if ((left_analog_y < -input_analog_deadzone) ||
+             (left_analog_y > input_analog_deadzone))
+         {
+            joy_5200_pot[(pad << 1) + 1] = a5200_get_analog_pot(left_analog_y);
+            atari_analog[pad] = 1;
+         }
       }
-
-      if ((left_analog_y < -input_analog_deadzone) ||
-          (left_analog_y > input_analog_deadzone))
+      /* Mouse */
+      else if (analog_device == ANALOG_DEVICE_MOUSE)
       {
-         joy_5200_pot[(pad << 1) + 1] = a5200_get_analog_pot(left_analog_y);
-         atari_analog[pad]            = 1;
+         atari_analog[pad] = 1;
+         mouse_abs_x += input_state_cb(pad_idx, RETRO_DEVICE_MOUSE,
+                                       0, RETRO_DEVICE_ID_MOUSE_X) * mouse_scalar;
+         mouse_abs_y += input_state_cb(pad_idx, RETRO_DEVICE_MOUSE,
+                                       0, RETRO_DEVICE_ID_MOUSE_Y) * mouse_scalar;
+         mouse_abs_x = min(max(mouse_abs_x, -LIBRETRO_ANALOG_RANGE), LIBRETRO_ANALOG_RANGE);
+         mouse_abs_y = min(max(mouse_abs_y, -LIBRETRO_ANALOG_RANGE), LIBRETRO_ANALOG_RANGE);
+
+         joy_5200_pot[(pad << 1) + 0] = a5200_get_mouse_pot(mouse_abs_x);
+         joy_5200_pot[(pad << 1) + 1] = a5200_get_mouse_pot(mouse_abs_y);
       }
 
       /* 1st trigger button */
@@ -937,10 +1017,10 @@ static void update_input(void)
          /* If dual stick hack is disabled, right analog
           * stick is used as a virtual number pad, with
           * directions mapping to the physical key layout */
-         right_analog_x = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
-               RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
-         right_analog_y = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
-               RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y);
+         int right_analog_x = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
+                                             RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
+         int right_analog_y = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
+                                             RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y);
 
          if ((right_analog_x < -input_analog_deadzone) ||
              (right_analog_x > input_analog_deadzone)  ||
@@ -972,10 +1052,10 @@ static void update_input(void)
        *   dual stick hack is active */
       if (input_hack == INPUT_HACK_DUAL_STICK)
       {
-         right_analog_x = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
-               RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
-         right_analog_y = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
-               RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y);
+         int right_analog_x = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
+                                             RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
+         int right_analog_y = input_state_cb(pad_idx, RETRO_DEVICE_ANALOG,
+                                             RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y);
 
          if ((right_analog_x < -input_analog_deadzone) ||
              (right_analog_x > input_analog_deadzone))
